@@ -1,8 +1,10 @@
 <html>
 	<body>
+		<!--
 		<div id="fb-root"></div>
 		<script async defer src="//connect.facebook.net/en_US/sdk.js"></script>
 		<script>
+		/*
 			//You should insert it directly after the opening <body> tag on each page you want to load it:
 			window.fbAsyncInit = function() {
 				FB.init({
@@ -12,10 +14,12 @@
 			}
 			//parece q funciona quando quer, ao usar a versao
 			 //version: 'v7.0' is the fb api version https://developers.facebook.com/docs/graph-api/changelog/
+		*/
 		</script>
+-->
 		
 		
-		<h3>Facebook send dialog v1.0</h3>
+		<h3>Facebook send dialog v2.0</h3>
 		<input id="busca" type="text" onclick="this.select();" onkeypress="enter(event);">
 		<button onclick="buscar()" style="font-size:22px; height:50.6px; width:149.5px;">confirma</button>
 		
@@ -28,17 +32,18 @@
 			//https://developers.facebook.com/tools/explorer/?method=POST&path=me%2Ffeed&version=v2.5&name=Test&link=http%3A%2F%2Fdev.louderband.com%2Flisten&picture=http%3A%2F%2Fdev.louderband.com%2Fimg%2Fcontest%2Fpau-share.jpg&caption=http%3A%2F%2Fdev.louderband.com&description=TEST123&message=TEST123
 			//fb graph api version https://developers.facebook.com/docs/graph-api/changelog/
 			//fb.ui wiki http://fbdevwiki.com/wiki/FB.ui
+			
 			 function fbShare(url, winWidth, winHeight) {
 				var winTop = (screen.height / 2) - (winHeight / 2);
 				var winLeft = (screen.width / 2) - (winWidth / 2);
-				window.open(url, 'sharer', 'top=' + winTop + ',left=' + winLeft + ',toolbar=0,status=0,width=' + winWidth + ',height=' + winHeight);
+				window.open(url, 'windowName', 'top=' + winTop + ',left=' + winLeft + ',toolbar=0,status=0,width=' + winWidth + ',height=' + winHeight);
 			}
 			
 			function buscar(){    
 				//gambiarra bug facebook version funciona quando quer (usando o try it do fbrell usa a ultima versao e nao coloca a versao usada na url e sempre funciona
 				var url;
 				//= 'https://www.facebook.com/dialog/send?app_id=184484190795&channel_url=https%3A%2F%2Fstaticxx.facebook.com%2Fconnect%2Fxd_arbiter.php%3Fversion%3D46%23cb%3Df30e3ec2c7a3ad4%26domain%3Dwww.fbrell.com%26origin%3Dhttp%253A%252F%252Fwww.fbrell.com%252Ff344eb80992e74c%26relation%3Dopener&display=popup&e2e=%7B%7D&fallback_redirect_uri=http%3A%2F%2Fwww.fbrell.com%2FSharing%2F2%2520-%2520FB.ui%2520Dialogs&link='+encodeURIComponent(document.getElementById('busca').value)+'&locale=en_US&next=https%3A%2F%2Fstaticxx.facebook.com%2Fconnect%2Fxd_arbiter.php%3Fversion%3D46%23cb%3Df318bbc2c5bda3%26domain%3Dwww.fbrell.com%26origin%3Dhttp%253A%252F%252Fwww.fbrell.com%252Ff344eb80992e74c%26relation%3Dopener%26frame%3Df17555e0996ac84%26result%3D%2522xxRESULTTOKENxx%2522&sdk=joey';
-				url = 'https://www.facebook.com/dialog/send?app_id=184484190795&display=popup&link='+encodeURIComponent(document.getElementById('busca').value)+'&next=https%3A%2F%2Fstaticxx.facebook.com%2Fconnect%2Fxd_arbiter.php%3Fversion%3D46%23cb%3Df355d42ed8ff74'
+				url = 'https://www.facebook.com/dialog/send?app_id=184484190795&display=popup&link='+encodeURIComponent(document.getElementById('busca').value)+'&next=https%3A%2F%2Fstaticxx.facebook.com%2Fconnect%2Fxd_arbiter.php%3Fversion%3D46%23cb%3Df355d42ed8ff74';
 				
 				fbShare(url, 520, 350);
 
