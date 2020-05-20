@@ -1,12 +1,9 @@
 <html>
 	<body>
-	<h3>Facebook send dialog v1.0</h3>
+	<h3>Facebook send dialog v1.1</h3>
 	<input id="busca" type="text" onclick="this.select();" onkeypress="enter(event);">
 	<button onclick="buscar()" style="font-size:22px; height:50.6px; width:149.5px;">confirma</button>
-
-	<div id="fb-root"></div>
-	<script src="https://connect.facebook.net/en_US/all.js" async=""></script>
-
+		
 	<script>
 		//https://developers.facebook.com/docs/javascript/reference/FB.ui/
 		//https://github.com/fbsamples/fbrell
@@ -34,6 +31,9 @@
 			cookie: true,
 			xfbml: true
 		});
-	</script>
+	</script>		
+		
+	<div id="fb-root"></div>
+	<script src="//connect.facebook.net/en_US/all.js"></script>	
 	</body>
 </html>
