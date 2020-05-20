@@ -1,5 +1,7 @@
 <html>
 	<body>
+		<div id="fb-root"></div>
+		<script async defer src="//connect.facebook.net/en_US/sdk.js"></script>
 		<script>
 			//You should insert it directly after the opening <body> tag on each page you want to load it:
 			window.fbAsyncInit = function() {
@@ -9,23 +11,12 @@
 					xfbml: true
 				});
 			}
-
-			(function(d, s, id){
-			      var js, fjs = d.getElementsByTagName(s)[0];
-			      if (d.getElementById(id)) {return;}
-			      js = d.createElement(s); js.id = id;
-			      js.src = "//connect.facebook.net/en_US/sdk.js";
-			      fjs.parentNode.insertBefore(js, fjs);
-			    }(document, 'script', 'facebook-jssdk'));
 		</script>
-		<script async defer src="//connect.facebook.net/en_US/sdk.js"></script>
 		
 		
-		<h3>Facebook send dialog v1.2</h3>
+		<h3>Facebook send dialog v1.4</h3>
 		<input id="busca" type="text" onclick="this.select();" onkeypress="enter(event);">
 		<button onclick="buscar()" style="font-size:22px; height:50.6px; width:149.5px;">confirma</button>
-		
-		<div id="fb-root"></div>
 		
 		<script>
 			//https://developers.facebook.com/docs/javascript/reference/FB.ui/
