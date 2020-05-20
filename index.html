@@ -18,19 +18,20 @@
 		//fb.ui wiki http://fbdevwiki.com/wiki/FB.ui
 
 		function buscar(){      
-		FB.ui({
-		  method: 'send',
-		  link: document.getElementById('busca').value
-		});
+			FB.ui({
+			  method: 'send',
+			  link: document.getElementById('busca').value
+			});
 		}
 
 		function enter(e){
-		if (e.keyCode == 13 || e.which == 13)
-		buscar();
+			if (e.keyCode == 13 || e.which == 13)
+			buscar();
 		}
 
 		FB.init({
-		xfbml: true
+			appId: 184484190795,
+			xfbml: true
 		});
 	</script>
 	</body>
