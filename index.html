@@ -1,49 +1,53 @@
 <html>
 	<body>
-	<h3>Facebook send dialog v1.1</h3>
-	<input id="busca" type="text" onclick="this.select();" onkeypress="enter(event);">
-	<button onclick="buscar()" style="font-size:22px; height:50.6px; width:149.5px;">confirma</button>
-			
-	<div id="fb-root"></div>
+		<script>
+			//You should insert it directly after the opening <body> tag on each page you want to load it:
+			window.fbAsyncInit = function() {
+				FB.init({
+					appId: 184484190795,
+					cookie: true,
+					xfbml: true
+				});
+			}
+
+			(function(d, s, id){
+			      var js, fjs = d.getElementsByTagName(s)[0];
+			      if (d.getElementById(id)) {return;}
+			      js = d.createElement(s); js.id = id;
+			      js.src = "//connect.facebook.net/en_US/sdk.js";
+			      fjs.parentNode.insertBefore(js, fjs);
+			    }(document, 'script', 'facebook-jssdk'));
+		</script>
+		<script async defer src="//connect.facebook.net/en_US/sdk.js"></script>
 		
-	<script>
-		//https://developers.facebook.com/docs/javascript/reference/FB.ui/
-		//https://github.com/fbsamples/fbrell
-		//http://www.fbrell.com/examples/
-		//http://www.fbrell.com/Sharing/2%20-%20FB.ui%20Dialogs
-		//https://developers.facebook.com/docs/sharing/reference/share-dialog#advancedtopics
-		//https://developers.facebook.com/tools/explorer/?method=POST&path=me%2Ffeed&version=v2.5&name=Test&link=http%3A%2F%2Fdev.louderband.com%2Flisten&picture=http%3A%2F%2Fdev.louderband.com%2Fimg%2Fcontest%2Fpau-share.jpg&caption=http%3A%2F%2Fdev.louderband.com&description=TEST123&message=TEST123
-		//fb graph api version https://developers.facebook.com/docs/graph-api/changelog/
-		//fb.ui wiki http://fbdevwiki.com/wiki/FB.ui
-
-		function buscar(){      
-			FB.ui({
-			  method: 'send',
-			  link: document.getElementById('busca').value
-			});
-		}
-
-		function enter(e){
-			if (e.keyCode == 13 || e.which == 13)
-			buscar();
-		}
-
-		window.fbAsyncInit = function() {
-			FB.init({
-				appId: 184484190795,
-				cookie: true,
-				xfbml: true
-			});
-		}
 		
-		(function(d, s, id){
-		      var js, fjs = d.getElementsByTagName(s)[0];
-		      if (d.getElementById(id)) {return;}
-		      js = d.createElement(s); js.id = id;
-		      js.src = "//connect.facebook.net/en_US/sdk.js";
-		      fjs.parentNode.insertBefore(js, fjs);
-		    }(document, 'script', 'facebook-jssdk'));
-	</script>
-	<script src="//connect.facebook.net/en_US/all.js"></script>	
+		<h3>Facebook send dialog v1.2</h3>
+		<input id="busca" type="text" onclick="this.select();" onkeypress="enter(event);">
+		<button onclick="buscar()" style="font-size:22px; height:50.6px; width:149.5px;">confirma</button>
+		
+		<div id="fb-root"></div>
+		
+		<script>
+			//https://developers.facebook.com/docs/javascript/reference/FB.ui/
+			//https://github.com/fbsamples/fbrell
+			//http://www.fbrell.com/examples/
+			//http://www.fbrell.com/Sharing/2%20-%20FB.ui%20Dialogs
+			//https://developers.facebook.com/docs/sharing/reference/share-dialog#advancedtopics
+			//https://developers.facebook.com/tools/explorer/?method=POST&path=me%2Ffeed&version=v2.5&name=Test&link=http%3A%2F%2Fdev.louderband.com%2Flisten&picture=http%3A%2F%2Fdev.louderband.com%2Fimg%2Fcontest%2Fpau-share.jpg&caption=http%3A%2F%2Fdev.louderband.com&description=TEST123&message=TEST123
+			//fb graph api version https://developers.facebook.com/docs/graph-api/changelog/
+			//fb.ui wiki http://fbdevwiki.com/wiki/FB.ui
+
+			function buscar(){      
+				FB.ui({
+				  method: 'send',
+				  link: document.getElementById('busca').value
+				});
+			}
+
+			function enter(e){
+				if (e.keyCode == 13 || e.which == 13)
+				buscar();
+			}
+		</script>
 	</body>
 </html>
