@@ -1,31 +1,37 @@
-<html>
-<head>
-  <title>Your Website Title</title>
-    <!-- You can use open graph tags to customize link previews.
-    Learn more: https://developers.facebook.com/docs/sharing/webmasters -->
-  <meta property="og:url"           content="https://www.your-domain.com/your-page.html" />
-  <meta property="og:type"          content="website" />
-  <meta property="og:title"         content="Your Website Title" />
-  <meta property="og:description"   content="Your description" />
-  <meta property="og:image"         content="https://www.your-domain.com/path/image.jpg" />
-</head>
-<body>
+<h3>Facebook send dialog</h3>
+<input id="busca" type="text" onclick="this.select();" onkeypress="enter(event);">
+<button onclick="buscar()" style="font-size:22px; height:50.6px; width:149.5px;">confirma</button>
+<script>
+  
+    function buscar(){      
+      FB.ui({
+          method: 'send',
+          link: document.getElementById('busca').value
+      });
+    }
 
-  <!-- Load Facebook SDK for JavaScript -->
-  <div id="fb-root"></div>
-  <script>(function(d, s, id) {
-    var js, fjs = d.getElementsByTagName(s)[0];
-    if (d.getElementById(id)) return;
-    js = d.createElement(s); js.id = id;
-    js.src = "https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.5";
-    fjs.parentNode.insertBefore(js, fjs);
-  }(document, 'script', 'facebook-jssdk'));</script>
+    function enter(e){
+      if (e.keyCode == 13 || e.which == 13)
+        buscar();
+    }
+	
+	//appid 1866747600266711, 184484190795
+  //https://jsfiddle.net/api/post/library/pure/
+  //https://developers.facebook.com/docs/javascript/examples
+  window.fbAsyncInit = function() {
+    FB.init({
+      appId   : 1866747600266711,
+      status  : true,
+      xfbml      : true,
+      version    : 'v2.9'
+    });
+  };
 
-  <!-- Your send button code -->
-  <div class="fb-send" 
-    data-href="https://www.your-domain.com/your-page.html" 
-    data-layout="button_count">
-  </div>
-
-</body>
-</html>
+  (function(d, s, id){
+     var js, fjs = d.getElementsByTagName(s)[0];
+     if (d.getElementById(id)) {return;}
+     js = d.createElement(s); js.id = id;
+     js.src = "//connect.facebook.net/en_US/sdk.js";
+     fjs.parentNode.insertBefore(js, fjs);
+   }(document, 'script', 'facebook-jssdk'));
+</script>
