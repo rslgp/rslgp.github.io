@@ -3,6 +3,8 @@
 	<h3>Facebook send dialog v1.1</h3>
 	<input id="busca" type="text" onclick="this.select();" onkeypress="enter(event);">
 	<button onclick="buscar()" style="font-size:22px; height:50.6px; width:149.5px;">confirma</button>
+			
+	<div id="fb-root"></div>
 		
 	<script>
 		//https://developers.facebook.com/docs/javascript/reference/FB.ui/
@@ -26,14 +28,22 @@
 			buscar();
 		}
 
-		FB.init({
-			appId: 184484190795,
-			cookie: true,
-			xfbml: true
-		});
-	</script>		
+		window.fbAsyncInit = function() {
+			FB.init({
+				appId: 184484190795,
+				cookie: true,
+				xfbml: true
+			});
+		}
 		
-	<div id="fb-root"></div>
+		(function(d, s, id){
+		      var js, fjs = d.getElementsByTagName(s)[0];
+		      if (d.getElementById(id)) {return;}
+		      js = d.createElement(s); js.id = id;
+		      js.src = "//connect.facebook.net/en_US/sdk.js";
+		      fjs.parentNode.insertBefore(js, fjs);
+		    }(document, 'script', 'facebook-jssdk'));
+	</script>
 	<script src="//connect.facebook.net/en_US/all.js"></script>	
 	</body>
 </html>
