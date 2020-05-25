@@ -39,19 +39,16 @@
 				busca= encodeURIComponent(busca);
 				busca= replaceAll(busca," ","+");
 				//alert(busca);
-				var tempo2Acumulativo = 0;
-				var url;
-				for(var targetLang of languages){
-					url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=" + targetLang + "&hl=en&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=sos&dt=ss&dt=t&dt=gt&ssel=3&tsel=3&kc=0&tk=197143.376756&q=" + busca;
-
-					tempo2Acumulativo += 1000 + getRandomInt(500,1300);
-					setTimeout(function(){doAjax(url, targetLang);}, tempoAcumulativo );
 				
-				}
+				next(0);
 				
 				//https://translate.google.com/translate_a/single?client=webapp&sl=ja&tl=ar&hl=en&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=sos&dt=ss&dt=t&pc=1&ssel=0&tsel=4&kc=2&tk=197143.376756&q=funny%20R.%20smile%20R.%20laugh%20R.%20happy%20R.%20cute%20R.%20relax%20D.%20moment
 				//https://translate.google.com/translate_a/single?client=webapp&sl=en&tl=pt&hl=en&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=sos&dt=ss&dt=t&dt=gt&ssel=3&tsel=3&kc=0&tk=197143.376756&q=funny%20R.%20smile%20R.%20laugh%20R.%20happy%20R.%20cute%20R.%20relax%20D.%20moment
 			
+			}
+			
+			function dumpAjax(url,t){
+				//console.log(t+" "+new Date().getSeconds());
 			}
 			//0 to max
 			function getRandomInt(min, max) {
@@ -65,8 +62,8 @@
 				targetLang=languages[i++];
 				var url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=" + targetLang + "&hl=en&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=sos&dt=ss&dt=t&dt=gt&ssel=3&tsel=3&kc=0&tk=197143.376756&q=" + busca;
 				//dt = t (term) = ex (expression)
-				tempoAcumulativo += 1000 + getRandomInt(500,1300);
-				setTimeout(function(){doAjax(url, targetLang);}, tempoAcumulativo );
+				//tempoAcumulativo += 1000 + getRandomInt(500,1300);
+				setTimeout(function(){doAjax(url, targetLang); next(i)}, 1000 + getRandomInt(500,1300) );
 				
 				//setTimeout(function(){atualizarBarraDoing("translating in "+dictLanguages[targetLang]); atualizarBarra(lAtual*100/languages.length); next(i)}, tempoAcumulativo );
 				
