@@ -39,14 +39,13 @@
 				busca= encodeURIComponent(busca);
 				busca= replaceAll(busca," ","+");
 				//alert(busca);
-				next(0);
 				var tempo2Acumulativo = 0;
 				var url;
 				for(var targetLang of languages){
 					url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=" + targetLang + "&hl=en&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=sos&dt=ss&dt=t&dt=gt&ssel=3&tsel=3&kc=0&tk=197143.376756&q=" + busca;
 
 					tempo2Acumulativo += 1000 + getRandomInt(500,1300);
-					setTimeout(function(){doAjax(url, targetLang); next(i)}, tempoAcumulativo );
+					setTimeout(function(){doAjax(url, targetLang);}, tempoAcumulativo );
 				
 				}
 				
