@@ -48,7 +48,7 @@
 			}
 			
 			function dumpAjax(url,t){
-				//console.log(t+" "+new Date().getSeconds());
+				console.log(t+" "+new Date().getSeconds());
 			}
 			//0 to max
 			function getRandomInt(min, max) {
@@ -59,7 +59,10 @@
 			function next(i){
 				wait(getRandomInt(20,100));
 				
-				if(i%20==0) wait(getRandomInt(2000,5000));
+				if(i%20==0) wait(getRandomInt(5000,10000));
+				if(getRandomInt(0,9) < 7) wait(getRandomInt(3000,6000));
+				if(i%2==0) wait(1200);
+				else wait(2200);
 				
 				if(i>=languages.length) return;
 				lAtual = i;
@@ -67,8 +70,10 @@
 				var url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=" + targetLang + "&hl=en&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=sos&dt=ss&dt=t&dt=gt&ssel=3&tsel=3&kc=0&q=" + busca;
 				//dt = t (term) = ex (expression)
 				//tempoAcumulativo += 1000 + getRandomInt(500,1300);
-				setTimeout(function(){doAjax(url, targetLang); wait(getRandomInt(50,200)); next(i)}, 1100 + getRandomInt(1000,2000) );
 				
+				doAjax(url, targetLang); 
+				wait(1100 + getRandomInt(1000,2000)); 
+				next(i);
 				//setTimeout(function(){atualizarBarraDoing("translating in "+dictLanguages[targetLang]); atualizarBarra(lAtual*100/languages.length); next(i)}, tempoAcumulativo );
 				
 				
