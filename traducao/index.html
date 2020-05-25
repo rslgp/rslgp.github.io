@@ -40,15 +40,33 @@
 				busca= replaceAll(busca," ","+");
 				//alert(busca);
 				
-				next(0);
+				escalonateTimeout();
 				
 				//https://translate.google.com/translate_a/single?client=webapp&sl=ja&tl=ar&hl=en&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=sos&dt=ss&dt=t&pc=1&ssel=0&tsel=4&kc=2&tk=197143.376756&q=funny%20R.%20smile%20R.%20laugh%20R.%20happy%20R.%20cute%20R.%20relax%20D.%20moment
 				//https://translate.google.com/translate_a/single?client=webapp&sl=en&tl=pt&hl=en&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=sos&dt=ss&dt=t&dt=gt&ssel=3&tsel=3&kc=0&tk=197143.376756&q=funny%20R.%20smile%20R.%20laugh%20R.%20happy%20R.%20cute%20R.%20relax%20D.%20moment
 			
 			}
 			
+			function escalonateTimeout(){
+				tempoAcumulativo=0;
+				var url="";
+				var count=0;
+				for(var t of languages){
+					url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=" + targetLang + "&hl=en&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=sos&dt=ss&dt=t&dt=gt&ssel=3&tsel=3&kc=0&q=" + busca;
+					tempoAcumulativo += 1703 + getRandomInt(200,3000);
+					count++;
+					if(count%10==0) tempoAcumulativo += 17000 + getRandomInt(0,8000);
+					chooseLang(url, t, tempoAcumulativo);
+				}
+			}
+			
+			function chooseLang(url, t, tempoAcumulativo){
+				setTimeout(function(){ doAjax(url, t); }, tempoAcumulativo);
+			}
+			
 			function dumpAjax(url,t){
-				console.log(t+" "+new Date().getSeconds());
+			var d = new Date();
+				console.log(t+" "+d.getMinutes()+":"+d.getSeconds());
 			}
 			//0 to max
 			function getRandomInt(min, max) {
@@ -57,6 +75,7 @@
 			var targetLang, lAtual;
 			var tempoAcumulativo=0;
 			function next(i){
+			
 				wait(getRandomInt(20,100));
 				
 				if(i%20==0) wait(getRandomInt(5000,10000));
@@ -71,7 +90,7 @@
 				//dt = t (term) = ex (expression)
 				//tempoAcumulativo += 1000 + getRandomInt(500,1300);
 				
-				doAjax(url, targetLang); 
+				dumpAjax(url, targetLang); 
 				wait(1100 + getRandomInt(1000,2000)); 
 				next(i);
 				//setTimeout(function(){atualizarBarraDoing("translating in "+dictLanguages[targetLang]); atualizarBarra(lAtual*100/languages.length); next(i)}, tempoAcumulativo );
