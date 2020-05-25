@@ -47,12 +47,13 @@
 			
 			}
 			
+			const part1="https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=", part2="&hl=en&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=sos&dt=ss&dt=t&dt=gt&ssel=3&tsel=3&kc=0&q=";
 			function escalonateTimeout(){
 				tempoAcumulativo=0;
 				var url="";
 				var count=0;
 				for(var t of languages){
-					url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=" + targetLang + "&hl=en&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=sos&dt=ss&dt=t&dt=gt&ssel=3&tsel=3&kc=0&q=" + busca;
+					url = part1 + t + part2 + busca;
 					tempoAcumulativo += 1703 + getRandomInt(200,3000);
 					count++;
 					if(count%10==0) {tempoAcumulativo += 17000 + getRandomInt(0,8000); atualizarBarraDoing("resting a little (17s ~ 25s)... ");}
