@@ -60,7 +60,7 @@
 				if(i>=languages.length) return;
 				lAtual = i;
 				targetLang=languages[i++];
-				var url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=" + targetLang + "&hl=en&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=sos&dt=ss&dt=t&dt=gt&ssel=3&tsel=3&kc=0&tk=197143.376756&q=" + busca;
+				var url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=" + targetLang + "&hl=en&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=sos&dt=ss&dt=t&dt=gt&ssel=3&tsel=3&kc=0&q=" + busca;
 				//dt = t (term) = ex (expression)
 				//tempoAcumulativo += 1000 + getRandomInt(500,1300);
 				setTimeout(function(){doAjax(url, targetLang); wait(200); next(i)}, 1200 + getRandomInt(1000,1800) );
