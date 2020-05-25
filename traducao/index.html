@@ -57,14 +57,17 @@
 			var targetLang, lAtual;
 			var tempoAcumulativo=0;
 			function next(i){
-				wait(20);
+				wait(getRandomInt(20,100));
+				
+				if(i%20==0) wait(getRandomInt(2000,5000));
+				
 				if(i>=languages.length) return;
 				lAtual = i;
 				targetLang=languages[i++];
 				var url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=" + targetLang + "&hl=en&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=sos&dt=ss&dt=t&dt=gt&ssel=3&tsel=3&kc=0&q=" + busca;
 				//dt = t (term) = ex (expression)
 				//tempoAcumulativo += 1000 + getRandomInt(500,1300);
-				setTimeout(function(){doAjax(url, targetLang); wait(getRandomInt(50,200)); next(i)}, 1100 + getRandomInt(500,1500) );
+				setTimeout(function(){doAjax(url, targetLang); wait(getRandomInt(50,200)); next(i)}, 1100 + getRandomInt(1000,2000) );
 				
 				//setTimeout(function(){atualizarBarraDoing("translating in "+dictLanguages[targetLang]); atualizarBarra(lAtual*100/languages.length); next(i)}, tempoAcumulativo );
 				
