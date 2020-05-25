@@ -55,7 +55,8 @@
 					url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=" + targetLang + "&hl=en&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=sos&dt=ss&dt=t&dt=gt&ssel=3&tsel=3&kc=0&q=" + busca;
 					tempoAcumulativo += 1703 + getRandomInt(200,3000);
 					count++;
-					if(count%10==0) tempoAcumulativo += 17000 + getRandomInt(0,8000);
+					if(count%10==0) {tempoAcumulativo += 17000 + getRandomInt(0,8000); atualizarBarraDoing("resting a little (17s ~ 25s)... ");}
+					if(count%60==0) {tempoAcumulativo += 180000; atualizarBarraDoing("too exausted, waiting 3 minutes...");}
 					chooseLang(url, t, tempoAcumulativo);
 				}
 			}
@@ -110,7 +111,7 @@
 	$.ajax({
 		url: link,
 		type: 'GET',
-		async: false,
+		async: true,
 		success: function(res) {
 			//var text = res.responseText;
 			// then you can manipulate your text as you wish
@@ -122,13 +123,13 @@
 		complete: function(res){
 			//alert("completei");
 			//alert(res.responseText);			
-			  result = JSON.parse( replaceAll( replaceAll(res.responseText,",,,",","), ",,","," ) );
+			  var resultLocal = JSON.parse( replaceAll( replaceAll(res.responseText,",,,",","), ",,","," ) );
 			  //var result = jQuery.parseJSON(respostaTexto);
 			  
-			  translatedText = result[0][0][0];
+			  var translatedTextLocal = resultLocal[0][0][0];
 			  
-			  traducao = translatedText;
-			  responseCallback(traducao, language);
+			  var traducaoLocal = translatedTextLocal;
+			  responseCallback(traducaoLocal, language);
 			  //alert(translatedText);
 		},
 		error: function(res){
