@@ -1,0 +1,192 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252"><style type="text/css"></style> <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script></head><body>
+	
+		<script>		
+		
+			function replaceAll(str, de, para){
+				var pos = str.indexOf(de);
+				while (pos > -1){
+					str = str.replace(de, para);
+					pos = str.indexOf(de);
+				}
+				return (str);
+			}
+			
+			var languages = ["af", "sq", "am", "ar", "hy", "az", "eu", "be", "bn", "bs", "bg", "ca", "ceb", "zh", "zh-TW", "co", "hr", "cs", "da", "nl", "en", "eo", "et", "fi", "fr", "fy", "gl", "ka", "de", "el", "gu", "ht", "ha", "haw", "he", "iw", "hi", "hmn", "hu", "is", "ig", "id", "ga", "it", "ja", "jv", "kn", "kk", "km", "rw", "ko", "ku", "ky", "lo", "la", "lv", "lt", "lb", "mk", "mg", "ms", "ml", "mt", "mi", "mr", "mn", "my", "ne", "no", "ny", "or", "ps", "fa", "pl", "pt", "pa", "ro", "ru", "sm", "gd", "sr", "st", "sn", "sd", "si", "sk", "sl", "so", "es", "su", "sw", "sv", "tl", "tg", "ta", "tt", "te", "th", "tr", "tk", "uk", "ur", "ug", "uz", "vi", "cy", "xh", "yi", "yo", "zu"];
+			//var languages = ["af", "sq", "am", "ar"];
+			
+			var languagesNominal = ["Afrikaans", "Albanian", "Amharic", "Arabic", "Armenian", "Azerbaijani", "Basque", "Belarusian", "Bengali", "Bosnian", "Bulgarian", "Catalan", "Cebuano", "Chinese (Simplified)", "Chinese (Traditional)", "Corsican", "Croatian", "Czech", "Danish", "Dutch", "English", "Esperanto", "Estonian", "Finnish", "French", "Frisian", "Galician", "Georgian", "German", "Greek", "Gujarati", "Haitian Creole", "Hausa", "Hawaiian", "Hebrew", "Hebrew", "Hindi", "Hmong", "Hungarian", "Icelandic", "Igbo", "Indonesian", "Irish", "Italian", "Japanese", "Javanese", "Kannada", "Kazakh", "Khmer", "Kinyarwanda", "Korean", "Kurdish", "Kyrgyz", "Lao", "Latin", "Latvian", "Lithuanian", "Luxembourgish", "Macedonian", "Malagasy", "Malay", "Malayalam", "Maltese", "Maori", "Marathi", "Mongolian", "Myanmar (Burmese)", "Nepali", "Norwegian", "Nyanja (Chichewa)", "Odia (Oriya)", "Pashto", "Persian", "Polish", "Portuguese (Portugal, Brazil)", "Punjabi", "Romanian", "Russian", "Samoan", "Scots Gaelic", "Serbian", "Sesotho", "Shona", "Sindhi", "Sinhala (Sinhalese)", "Slovak", "Slovenian", "Somali", "Spanish", "Sundanese", "Swahili", "Swedish", "Tagalog (Filipino)", "Tajik", "Tamil", "Tatar", "Telugu", "Thai", "Turkish", "Turkmen", "Ukrainian", "Urdu", "Uyghur", "Uzbek", "Vietnamese", "Welsh", "Xhosa", "Yiddish", "Yoruba", "Zulu"];
+			
+			var dictLanguages = {};
+			languages.forEach((key, i) => dictLanguages[key] = languagesNominal[i]);
+			//console.log(dictLanguages);
+			
+			
+			var dictLanguagesCode = {};
+			languagesNominal.forEach((key, i) => dictLanguagesCode[key] = languages[i]);
+			//console.log(dictLanguagesCode);
+			
+			function wait(ms){
+			   var start = new Date().getTime();
+			   var end = start;
+			   while(end < start + ms) {
+				 end = new Date().getTime();
+			  }
+			}
+			
+			var busca;
+			function buscar() {				
+				busca = document.getElementById('busca').value,
+				busca= encodeURIComponent(busca);
+				busca= replaceAll(busca," ","+");
+				//alert(busca);
+				next(0);
+				
+				//https://translate.google.com/translate_a/single?client=webapp&sl=ja&tl=ar&hl=en&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=sos&dt=ss&dt=t&pc=1&ssel=0&tsel=4&kc=2&tk=197143.376756&q=funny%20R.%20smile%20R.%20laugh%20R.%20happy%20R.%20cute%20R.%20relax%20D.%20moment
+				//https://translate.google.com/translate_a/single?client=webapp&sl=en&tl=pt&hl=en&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=sos&dt=ss&dt=t&dt=gt&ssel=3&tsel=3&kc=0&tk=197143.376756&q=funny%20R.%20smile%20R.%20laugh%20R.%20happy%20R.%20cute%20R.%20relax%20D.%20moment
+			
+			}
+			//0 to max
+			function getRandomInt(min, max) {
+			  return min+Math.floor(Math.random() * Math.floor(max));
+			}
+			var targetLang, lAtual;
+			var tempoAcumulativo=0;
+			function next(i){
+				if(i>=languages.length) return;
+				lAtual = i;
+				targetLang=languages[i++];
+				var url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=" + targetLang + "&hl=en&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=sos&dt=ss&dt=t&dt=gt&ssel=3&tsel=3&kc=0&tk=197143.376756&q=" + busca;
+				//dt = t (term) = ex (expression)
+				tempoAcumulativo += 1000 + getRandomInt(500,1300);
+				setTimeout(function(){doAjax(url, targetLang); next(i)}, tempoAcumulativo );
+				
+				//setTimeout(function(){atualizarBarraDoing("translating in "+dictLanguages[targetLang]); atualizarBarra(lAtual*100/languages.length); next(i)}, tempoAcumulativo );
+				
+				
+			}
+			
+			function responseCallback(traducao, l){
+				document.getElementById('resultado').innerHTML += '<p id="'+dictLanguages[l]+'">'+traducao+'</p>';
+			}
+			
+			function doAjax(link, language){
+			
+			atualizarBarraDoing("translating in "+dictLanguages[language]);
+			atualizarBarra(lAtual*100/languages.length);
+			
+	$.ajax({
+		url: link,
+		type: 'GET',
+		async: false,
+		success: function(res) {
+			//var text = res.responseText;
+			// then you can manipulate your text as you wish
+			//alert(text);
+
+			//return text;
+			
+		},
+		complete: function(res){
+			//alert("completei");
+			//alert(res.responseText);			
+			  result = JSON.parse( replaceAll( replaceAll(res.responseText,",,,",","), ",,","," ) );
+			  //var result = jQuery.parseJSON(respostaTexto);
+			  
+			  translatedText = result[0][0][0];
+			  
+			  traducao = translatedText;
+			  responseCallback(traducao, language);
+			  //alert(translatedText);
+		},
+		error: function(res){
+		},
+		timeout: 3000
+	});
+}
+
+			function enter(e){
+				if (e.keyCode == 13 || e.which == 13)
+					buscar();
+			}
+			
+		</script>
+<br>
+
+
+
+	<center>
+	<!--progress bar -->	
+<table id="progressTable">
+  <tbody><tr>
+    
+    <td>
+		<div class="clickable">
+			<div class="display">
+				<div class="progress"></div>
+			</div>
+		</div>
+	</td>
+  <td><div class="number"></div></td>
+  <td><div class="statusProgress"></div></td>
+    </tr>
+  </tbody></table>
+<!-- fim progress bar-->
+
+	digite a busca <input id="busca" type="text" onclick="this.select();" onkeypress="enter(event);">
+			<button type="button" onclick="buscar()">Ja inseri!</button>
+	</center>
+<br>
+	<center>
+		<p id="resultado"></p>
+	
+	</center>
+
+<script>
+
+		//progress bar
+		
+const progresso = $('.progress');
+const numero = $('.number');
+const barraDoing = $('.statusProgress');
+var tamanhoBarra = $(".clickable").width();
+var x=0;
+
+function atualizarBarra(porcento){
+	if(tamanhoBarra==0) tamanhoBarra = $(".clickable").width();
+    porcento=porcento/100;
+    x += (porcento*tamanhoBarra);
+    if(x>tamanhoBarra) x=tamanhoBarra;
+    progresso.width(x);
+    numero.html(((x*100)/tamanhoBarra).toFixed(2)+"%");
+}
+
+function atualizarBarraDoing(statusText){
+    barraDoing.html(statusText);	
+}
+//fim progress bar
+</script>
+<style>
+.clickable {
+    //border: 1px solid #333;
+    background: #eee;
+    height: 40px;
+    width: 400px;
+    //margin: 15px;	
+    margin-bottom: 10px;
+    position: relative;
+}
+.display {
+    height: 16px;
+    position: absolute;
+    width: 100%;
+}
+.progress {
+    position:absolute;
+    left:0;
+    top:0;
+    background:green;
+    height:40px;
+    width:0px;
+}
+</style>
+</body></html>
