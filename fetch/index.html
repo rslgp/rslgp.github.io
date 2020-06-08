@@ -1,3 +1,51 @@
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
 <script>
+  const bypassCors='https://cors-anywhere.herokuapp.com/';
+  function cors(link){
+    return bypassCors+link;
+  }
+  
+  function doFetch(fetch, callback){
+    fetch.then( async (data) =>{ await console.log(data.body.getReader().read().then(({data,value}) => {callback(data,value)}))});
+  }
+
+  function doAjax(link, callback){
+    $.ajax({
+      url: link,
+      type: 'GET',
+      async: false,
+      success: function(res) {			
+        callback('success',res);;
+      },
+      complete: function(res){
+        callback('complete',res);
+      },
+      error: function(res){
+        callback('error',res);
+      },
+      timeout: 3000
+    });
+  }
+  
+  function doAjaxCors(link, callback){
+    $.ajax({
+      url: bypassCors+link,
+      type: 'GET',
+      async: false,
+      success: function(res) {			
+        callback('success',res);;
+      },
+      complete: function(res){
+        callback('complete',res);
+      },
+      error: function(res){
+        callback('error',res);
+      },
+      timeout: 3000
+    });
+  }
+  
 //FETCH.then( async (data) =>{ await console.log(data.body.getReader().read().then(({data,value}) => {console.log(String.fromCharCode.apply(null, value))}))});
 </script>
+
