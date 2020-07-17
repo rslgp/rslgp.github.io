@@ -47,7 +47,7 @@
   }
   
   
-  function doAjaxCorsHeaders(link, callback,method,headersJSON){
+  function doAjaxCorsHeaders(link, callback,method,headersJSON={}){
     $.ajax({
       url: bypassCors+link,
       type: method,
