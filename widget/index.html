@@ -1,0 +1,49 @@
+
+//voice
+let synth;
+let voice;
+
+let attempts = 0;
+function loadVoices() {
+  attempts++;
+  const voices = synth.getVoices();
+ //console.log(voices);
+ var search = 'rasil';
+  if (voices.length) {
+    //console.log(voices);
+    voice = voices.find(x => x.name.indexOf('rasil') !== -1 || x.name.indexOf('razil') !== -1);
+  }
+  if (!voice) {
+    if (attempts < 10) {
+      setTimeout(() => {
+        loadVoices();
+      }, 250);
+    } else {
+      //console.error(search + ' voice not found.');
+    }
+  }
+}
+
+if ('speechSynthesis' in window) {
+  synth = window.speechSynthesis;
+  loadVoices();
+}
+
+function speak(text) {
+  if (!synth || synth.speaking) {
+    return;
+  }
+  // …,..., ___
+  const output = text.replace(/(…|[._]{2,})/, '');
+  const utterance = new SpeechSynthesisUtterance(output);
+  utterance.addEventListener('error', error => console.error(error));
+  utterance.lang = 'pt-BR';
+  utterance.pitch = 1;
+  utterance.rate = 1.1;
+  utterance.voice = voice;
+  utterance.volume = 1;
+  synth.speak(utterance);
+  
+}
+
+setInterval(speak("teste"), 1000);
