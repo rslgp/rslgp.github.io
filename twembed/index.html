@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+
+<iframe frameborder="0"
+        scrolling="no"
+        id="reifel"
+        src="https://www.twitch.tv/embed/hebo/chat?parent=rslgp.github.io"
+        height="500"
+        width="350">
+</iframe>
+
+<!-- <iframe id="myFrame" src="https://www.twitch.tv/popout/reifel/chat?popout=" style="height:380px;width:100%"></iframe>
+-->
+<p>Click the "Tryit" button to hide the first H1 element in the iframe (another document).</p>
+
+<button onclick="myFunction()">Try it</button>
+
+<script>
+function myFunction() {
+  var iframe = document.getElementById("myFrame");
+  var elmnt = iframe.contentWindow.document.getElementsByTagName("H1")[0];
+  elmnt.style.display = "none";
+}
+</script>
+
+</body>
+</html>
