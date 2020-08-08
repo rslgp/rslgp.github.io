@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+<script src="https://www.nuance.com/content/dam/nuance/third-party/enterprise/vocalizer/vocalizer.js"> </script>
 <body>
 
 <div id="reifeldiv">
@@ -20,9 +21,26 @@
 
 <script>
 function myFunction() {
+/*
   var iframe = document.getElementById("myFrame");
   var elmnt = iframe.contentWindow.document.getElementsByTagName("H1")[0];
   elmnt.style.display = "none";
+  */
+  
+  var parametros = {
+  "language": "pt-br",
+  "voice": "Luciana",
+  "sample_rate": "22050",
+  "voice_model": "xpremium"
+};
+
+var inputspeak = {
+  "data": "não falo palavrão",
+  "content_type": "text/plain;charset=utf-8"
+};
+
+inputspeak.data="não falo palavrão"
+window.$vocalizer.core.VoCSSpeak("https://vocalizerplaygroundhost.nuance.com", parametros, inputspeak, null, null, null, null, 0);
 }
 </script>
 
