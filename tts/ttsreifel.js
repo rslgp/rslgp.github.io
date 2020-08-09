@@ -105,7 +105,7 @@ setTimeout(
 
 //chat reader
 var limitText=30;
-var filtros = /@|kk|hah|chat|wow|mongo|mogo|mega|[^aeiou]+$|^. |stonks|pog|lol|omg|oide|hau|[^A-Za-z ?éíãõóçêá]|([^rs])(?=\1+)|(rr)(?=r+)|(ss)(?=s+)/gmi;
+var filtros = /@|kk|hah|chat|wow|mongo|mogo|mega|[^aeiou]+$|^. |stonks|pog|lol|nigga|omg|oide|hau|[^A-Za-z ?éíãõóçêá]|([^rs])(?=\1+)|(rr)(?=r+)|(ss)(?=s+)/gmi;
 
 //var usersliberados=['Reifel'];
 var badgeliberados=['Subscriber'];
