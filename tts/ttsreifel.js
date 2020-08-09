@@ -1,4 +1,4 @@
-<script>
+
 //antispam
 function editDistance(s1, s2) {
   s1 = s1.toLowerCase();
@@ -146,4 +146,3 @@ try{
     }catch(e){}
     }
 }, false);
-</script>
