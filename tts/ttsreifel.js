@@ -113,8 +113,13 @@ var badgeliberados=['Subscriber','Prime'];
 
 var antispamlastmsg="";
 
-console.log(window.location.href + " "+document.referrer);
-document.addEventListener('DOMNodeInserted', function(e) {
+var x7 = ['reifel','yoda'];
+var able=false;
+for(var a of x7){
+	if(!able) able = window.location.href.indexOf(a) !== -1; 
+}
+//console.log(window.location.href + " "+document.referrer);
+if(able) document.addEventListener('DOMNodeInserted', function(e) {
     // loop parent nodes from the target to the delegation node
     for (var target = e.target; target && target != this; target = target.parentNode) {
 try{
