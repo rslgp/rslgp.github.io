@@ -108,10 +108,12 @@ var limitText=30;
 var filtros = /@|kk|hah|chat|wow|mongo|mogo|mega|[^aeiou]+$|^. |stonks|pog|lol|nigga|omg|oide|hau|[^A-Za-z ?éíãõóçêá]|([^rs])(?=\1+)|(rr)(?=r+)|(ss)(?=s+)/gmi;
 
 //var usersliberados=['Reifel'];
-var badgeliberados=['Subscriber'];
+var badgeliberados=['Subscriber','Prime'];
 //no futuro filtrar por sub e mod
 
 var antispamlastmsg="";
+
+console.log(window.location.href + " "+document.referrer);
 document.addEventListener('DOMNodeInserted', function(e) {
     // loop parent nodes from the target to the delegation node
     for (var target = e.target; target && target != this; target = target.parentNode) {
@@ -124,9 +126,10 @@ try{
 
             try{
 			var badge = target.getElementsByClassName("chat-badge")[0].alt;
-            //console.log(badge);
+            console.log(badge +" "+(badge.indexOf('Prime') == -1)+" "+(badge.indexOf(badgeliberados[0]) == -1));
 			}catch(e){}
-			if(/*usersliberados.indexOf(user) == -1 || */badge.indexOf(badgeliberados[0]) == -1) return;
+			// ((not SUB) && (not Prime))
+			if(/*usersliberados.indexOf(user) == -1 && */badge.indexOf(badgeliberados[0]) == -1 && badge.indexOf(badgeliberados[1]) == -1) return;
             
 			var coremsg = msg.substr(msg.indexOf(':')+2);
             if(coremsg.length > limitText) return;
