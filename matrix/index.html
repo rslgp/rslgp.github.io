@@ -18,8 +18,6 @@ const onPaste = () => {
   event.preventDefault();
 };
 
-firstname.addEventListener("paste", onPaste);
-lastname.addEventListener("paste", onPaste);
 </script>
 
 
@@ -30,4 +28,11 @@ lastname.addEventListener("paste", onPaste);
   result formatted:
   <input type="text" name="lastname" id="lastname" autocomplete="off">
 </form>
+
+<script>
+  //listeners
+  
+firstname.addEventListener("paste", onPaste);
+lastname.addEventListener("paste", onPaste);
+</script>
 
