@@ -11,8 +11,9 @@ const onPaste = () => {
   let names = paste.split("\t").join(",");
   names = names.split("\r\n").join('},{');
   names = '{'+names+'}';
-
+  names = names.replace(',{}','');
   lastname.value = names;
+  copy(names);
 
   event.preventDefault();
 };
