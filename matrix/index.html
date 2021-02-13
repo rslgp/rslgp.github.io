@@ -1,6 +1,6 @@
 <script>
 // Reference: https://developer.mozilla.org/en-US/docs/Web/API/Element/paste_event
-
+window.onload= function(){
 const firstname = document.getElementById("firstname");
 const lastname = document.getElementById("lastname");
 
@@ -17,6 +17,12 @@ const onPaste = () => {
 
   event.preventDefault();
 };
+  
+  
+firstname.addEventListener("paste", onPaste);
+lastname.addEventListener("paste", onPaste);
+  
+}
 
 </script>
 
@@ -29,10 +35,4 @@ const onPaste = () => {
   <input type="text" name="lastname" id="lastname" autocomplete="off">
 </form>
 
-<script>
-  //listeners
-  
-firstname.addEventListener("paste", onPaste);
-lastname.addEventListener("paste", onPaste);
-</script>
 
