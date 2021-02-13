@@ -8,7 +8,7 @@ const onPaste = () => {
   const paste = (event.clipboardData || window.clipboardData).getData("text");
   console.log(paste);
   
-  let names = paste.includes(' ') ? names.split(" ").join(",") : paste.split("\t").join(",");
+  let names = paste.includes(' ') ? paste.split(" ").join(",") : paste.split("\t").join(",");
   names = names.split("\r\n").join('},{');
   names = '{'+names+'}';
   names = names.replace(',{}','');
