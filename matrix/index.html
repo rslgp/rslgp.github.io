@@ -10,7 +10,7 @@ const onPaste = () => {
   
   let names = paste.includes(' ') ? paste.split(" ").join(",") : paste.split("\t").join(",");
   names = names.split("\r\n").join('},{');
-  names = '{'+names+'}';
+  names = '{{'+names+'}}';
   names = names.replace(',{}','');
   lastname.value = names;
 
