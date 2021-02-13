@@ -1,0 +1,30 @@
+<form>
+  matrix \t:
+  <input type="text" name="firstname" id="firstname" autocomplete="off">
+  
+  result formatted:
+  <input type="text" name="lastname" id="lastname" autocomplete="off">
+</form>
+
+<script>
+// Reference: https://developer.mozilla.org/en-US/docs/Web/API/Element/paste_event
+
+const firstname = document.getElementById("firstname");
+const lastname = document.getElementById("lastname");
+
+const onPaste = () => {
+  const paste = (event.clipboardData || window.clipboardData).getData("text");
+  console.log(paste);
+  
+  let names = paste.split("\t").join(",");
+  names = names.split("\r\n").join('},{');
+  names = '{'+names+'}';
+
+  lastname.value = names;
+
+  event.preventDefault();
+};
+
+firstname.addEventListener("paste", onPaste);
+lastname.addEventListener("paste", onPaste);
+</scrip>
