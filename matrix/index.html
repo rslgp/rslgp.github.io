@@ -9,7 +9,7 @@ const onPaste = () => {
   console.log(paste);
   
   let names = paste.split("\t").join(",");
-  names = names.split(" ").join('","');
+  names = names.split(" ").join(",");
   names = names.split("\r\n").join('},{');
   names = '{'+names+'}';
   names = names.replace(',{}','');
