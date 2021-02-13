@@ -13,7 +13,7 @@ const onPaste = () => {
   names = '{'+names+'}';
   names = names.replace(',{}','');
   lastname.value = names;
-  copy(names);
+  window.copy(names);
 
   event.preventDefault();
 };
