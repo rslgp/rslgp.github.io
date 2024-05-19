@@ -10,6 +10,21 @@
       integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3"
       crossorigin="anonymous"
     />
+
+    <style>
+        /* FEATURES */
+        .checkMark {
+          transform: rotate(deg);
+        }
+        .status {
+          text-align: center;
+        }
+        /* TRILHAS */
+        .nav-item:hover {
+          background-color: #0d6dfd54;
+          border-radius: 20px;
+        }
+      </style>
   </head>
   <body>
     <div class="container">
@@ -43,7 +58,38 @@
             FISCAL
           </button>
         </li>
+        <li class="nav-item" role="presentation">
+          <button
+            class="nav-link"
+            id="trilha-venda"
+            data-bs-toggle="pill"
+            data-bs-target="#pills-profile"
+            type="button"
+            role="tab"
+            aria-controls="pills-profile"
+            aria-selected="false"
+          >
+            VENDA
+          </button>
+        </li>
+
+        <li class="nav-item" role="presentation">
+          <button
+            class="nav-link"
+            id="trilha-fiscal"
+            data-bs-toggle="pill"
+            data-bs-target="#pills-profile"
+            type="button"
+            role="tab"
+            aria-controls="pills-profile"
+            aria-selected="false"
+          >
+            EMITIR ART
+          </button>
+        </li>
       </ul>
+
+      <!-- PARCEIROS COLUMN -->
       <div class="row">
         <div class="col-md-4">
           <h4>Parceiros</h4>
@@ -86,14 +132,6 @@
         <!-- CONTEUDO  -->
 
         <!-- FEATURES -->
-        <style>
-          .checkMark {
-            transform: rotate(deg);
-          }
-          .status {
-            text-align: center;
-          }
-        </style>
         <table class="table table-bordered" id="features-table">
           <thead>
             <tr>
@@ -167,22 +205,7 @@
 
         <div class="col-md-8">
           <div class="tab-content" id="Content">
-            <div
-              class="tab-pane fade show active"
-              id="conteudo-FADE"
-              role="tabpanel"
-              aria-labelledby="trilha-cnpj"
-            >
-              conteudo-cnpj
-            </div>
-            <div
-              class="tab-pane fade"
-              id="conteudo-fiscal"
-              role="tabpanel"
-              aria-labelledby="trilha-fiscal"
-            >
-              conteudo-fiscal
-            </div>
+            <div class="tab-pane fade show active" id="conteudo-FADE"></div>
           </div>
         </div>
       </div>
@@ -255,7 +278,8 @@
         },
       };
 
-      let trilhaAtual="cnpj", parceiroAtual="cowork";
+      let trilhaAtual = "cnpj",
+        parceiroAtual = "cowork";
       const atualizarConteudo = () => {
         let p = parceiroAtual.replace("parceiros-", "");
         let t = trilhaAtual.replace("trilha-", "");
