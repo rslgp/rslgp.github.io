@@ -12,19 +12,19 @@
     />
 
     <style>
-        /* FEATURES */
-        .checkMark {
-          transform: rotate(deg);
-        }
-        .status {
-          text-align: center;
-        }
-        /* TRILHAS */
-        .nav-item:hover {
-          background-color: #0d6dfd54;
-          border-radius: 20px;
-        }
-      </style>
+      /* FEATURES */
+      .checkMark {
+        transform: rotate(deg);
+      }
+      .status {
+        text-align: center;
+      }
+      /* TRILHAS */
+      .nav-item:hover {
+        background-color: #0d6dfd54;
+        border-radius: 20px;
+      }
+    </style>
   </head>
   <body>
     <div class="container">
@@ -76,7 +76,7 @@
         <li class="nav-item" role="presentation">
           <button
             class="nav-link"
-            id="trilha-fiscal"
+            id="trilha-art"
             data-bs-toggle="pill"
             data-bs-target="#pills-profile"
             type="button"
@@ -129,85 +129,85 @@
           </ul>
         </div>
 
-        <!-- CONTEUDO  -->
-
-        <!-- FEATURES -->
-        <table class="table table-bordered" id="features-table">
-          <thead>
-            <tr>
-              <th scope="col">Feature</th>
-              <th scope="col" class="status">Status</th>
-            </tr>
-          </thead>
-          <tbody id="features-content">
-            <tr>
-              <td class="feat">Conta Juridica</td>
-              <td class="status">
-                <svg
-                  width="24"
-                  height="24"
-                  transform="scale(1, -1)"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    stroke="#00C239"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 13l3-3 7 7"
-                  />
-                </svg>
-              </td>
-            </tr>
-            <tr>
-              <td class="feat">Feat 2</td>
-              <td class="status">
-                <svg
-                  width="24"
-                  height="24"
-                  transform="scale(1, -1)"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    stroke="#CCC"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 13l3-3 7 7"
-                  />
-                </svg>
-              </td>
-            </tr>
-            <tr>
-              <td class="feat">Contador</td>
-              <td class="status">
-                <svg
-                  width="24"
-                  height="24"
-                  transform="scale(1, -1)"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    stroke="#CCC"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 13l3-3 7 7"
-                  />
-                </svg>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <!-- CONTEUDO  -->      
 
         <div class="col-md-8">
           <div class="tab-content" id="Content">
             <div class="tab-pane fade show active" id="conteudo-FADE"></div>
           </div>
         </div>
+
+        <!-- FEATURES -->
+        <table class="table table-bordered" id="features-table">
+            <thead>
+              <tr>
+                <th scope="col">Feature</th>
+                <th scope="col" class="status">Status</th>
+              </tr>
+            </thead>
+            <tbody id="features-content">
+              <tr>
+                <td class="feat">Conta Juridica</td>
+                <td class="status">
+                  <svg
+                    width="24"
+                    height="24"
+                    transform="scale(1, -1)"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      stroke="#00C239"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 13l3-3 7 7"
+                    />
+                  </svg>
+                </td>
+              </tr>
+              <tr>
+                <td class="feat">Feat 2</td>
+                <td class="status">
+                  <svg
+                    width="24"
+                    height="24"
+                    transform="scale(1, -1)"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      stroke="#CCC"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 13l3-3 7 7"
+                    />
+                  </svg>
+                </td>
+              </tr>
+              <tr>
+                <td class="feat">Contador</td>
+                <td class="status">
+                  <svg
+                    width="24"
+                    height="24"
+                    transform="scale(1, -1)"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      stroke="#CCC"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 13l3-3 7 7"
+                    />
+                  </svg>
+                </td>
+              </tr>
+            </tbody>
+          </table>
       </div>
     </div>
     <script
@@ -272,7 +272,7 @@
         },
         nubank: {
           cnpj: {
-            text: "a COWORK vai abrir seu CNPJ e encontra um contator parceiro para voce",
+            text: "abra sua conta de banco juridica com a gente, e a parte fiscal fica sob sua responsabilidade junto a prefeitura local",
             features: new Set(["Conta Juridica"]),
           },
         },
@@ -285,7 +285,7 @@
         let t = trilhaAtual.replace("trilha-", "");
 
         let conteudoAtual = conteudo[p][t];
-        if (t == "cnpj") {
+        if (t === "cnpj") {
           tableFeaturesTable.hidden = false;
           const featCells = tableFeaturesContent.querySelectorAll("td.feat");
           const statusCells =
@@ -308,23 +308,25 @@
       navTrilha.addEventListener("click", function (e) {
         console.log(e.target.id);
         trilhaAtual = e.target.id;
-        switch (e.target.id) {
-          case "trilha-fiscal":
-            parceirosCowork.click();
-            parceirosNubank.style.display = "none";
-            break;
-          default:
-            parceirosNubank.style.display = "block";
-            break;
+        let t = trilhaAtual.replace("trilha-", "");
+        if(t==="cnpj") tableFeaturesTable.hidden = false;
+        let oferece = true;
+        //ocultar parceiros que nao oferece a trilha
+        for (let parceiro in conteudo) {
+          if (conteudo[parceiro][t] === undefined) {
+            document.getElementById(`parceiros-${parceiro}`).style.display =
+              "none";
+          } else {
+            document.getElementById(`parceiros-${parceiro}`).style.display =
+              "block";
+          }
         }
         atualizarConteudo();
       });
 
       navParceiros.addEventListener("click", function (e) {
-        console.log(e.target.id);
+        if(e.target.id === "") return; //FIX BUG CLICK FANTASMA ID VAZIO
         parceiroAtual = e.target.id;
-        switch (e.target.id) {
-        }
         atualizarConteudo();
       });
     </script>
