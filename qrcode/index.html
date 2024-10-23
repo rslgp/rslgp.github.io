@@ -1,49 +1,110 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Generator</title>
-    <style type="text/css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
         * {
-            padding: 0;
+            box-sizing: border-box;
             margin: 0;
+            padding: 0;
         }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Roboto', sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
-            background-color: #f9f9f9;
+            background-color: #f1f1f1;
+            padding: 16px;
         }
-        svg {
-            border: 1px #eee solid;
-            margin-top: 20px;
+
+        h1 {
+            margin-bottom: 24px;
+            font-size: 24px;
+            color: #424242;
         }
+
         input {
-            margin-bottom: 10px;
-            padding: 10px;
-            width: 300px;
+            margin-bottom: 16px;
+            padding: 12px;
+            width: 100%;
+            max-width: 360px;
             font-size: 16px;
+            border: 1px solid #bdbdbd;
+            border-radius: 4px;
+            background-color: #fff;
+            transition: border-color 0.3s;
         }
-        button {
-            padding: 10px 15px;
-            font-size: 16px;
+
+        input:focus {
+            border-color: #6200ea;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 20px;
+            background-color: #6200ea;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
             cursor: pointer;
-            margin-top: 10px; /* Added margin for better spacing */
+            margin-top: 16px;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #3700b3;
+        }
+
+        .btn:focus {
+            outline: none;
+        }
+
+        .qr-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 24px;
+        }
+
+        .download-btns {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .hidden {
+            display: none;
         }
     </style>
     <script src="qrcode.min.js"></script>
 </head>
+
 <body>
     <h1>QR Code Generator</h1>
-    <input type="text" id="input-content" placeholder="Enter text or URL" />
-    <input type="number" id="input-dim" placeholder="Enter size (e.g., 256)" min="1" value="256" />
-    <button id="generate-btn">Generate QR Code</button>
-    
-    <div id="qr-code-container">
+    <input type="text" id="input-content" placeholder="Enter text or URL" aria-label="QR Code Content" />
+    <input type="number" id="input-dim" placeholder="Enter size (e.g., 256)" min="1" value="256"
+        aria-label="QR Code Size" />
+    <button id="generate-btn" class="btn">Generate QR Code</button>
+
+    <div id="qr-code-container" class="qr-container">
         <!-- QR Code will be displayed here -->
+    </div>
+
+    <div id="download-buttons" class="download-btns hidden">
+        <a id="download-svg" class="btn">Download as SVG</a>
+        <a id="download-png" class="btn">Download as PNG</a>
     </div>
 
     <script>
@@ -53,49 +114,61 @@
             const inputContent = document.getElementById('input-content').value;
             const inputDim = parseInt(document.getElementById('input-dim').value, 10);
 
-            if (inputContent && !isNaN(inputDim) && inputDim > 0) {
-                // Clear previous QR code and download button
-                document.getElementById('qr-code-container').innerHTML = '';
+            if (!(inputContent && !isNaN(inputDim) && inputDim > 0)) { alert('Please enter valid text or URL and size.'); return; }
 
-                // Create QR code with the specified dimensions
-                const qrCode = new QRCode({
-                    msg: inputContent,
-                    dim: inputDim,  // Use the user-defined size
-                    pad: 4,
-                    mtx: -1,
-                    ecl: "H",
-                    ecb: 1,
-                    pal: ["#000", "#fff"],
-                    vrb: 0,
-                });
+            // Clear previous QR code and download buttons
+            document.getElementById('qr-code-container').innerHTML = '';
+            document.getElementById('download-buttons').classList.add('hidden');
 
-                // Append QR code to the container
-                document.getElementById('qr-code-container').appendChild(qrCode);
+            // Create QR code as SVG
+            const qrCode = new QRCode({
+                msg: inputContent,
+                dim: inputDim,
+                pad: 4,
+                mtx: -1,
+                ecl: "H",
+                ecb: 1,
+                pal: ["#000", "#fff"],
+                vrb: 0,
+            });
 
-                // Generate SVG Blob and update download link
-                const svgElement = qrCode; // Use the generated SVG element
-                const svgBlob = new Blob([svgElement.outerHTML], { type: 'image/svg+xml' });
-                const url = URL.createObjectURL(svgBlob);
+            // Append QR code SVG to the container
+            document.getElementById('qr-code-container').appendChild(qrCode);
 
-                // Create a download button inside the container
-                const downloadBtn = document.createElement('a');
-                downloadBtn.href = url;
-                downloadBtn.download = 'qrcode.svg';
-                downloadBtn.innerText = 'Download QR Code as SVG';
-                downloadBtn.style.display = 'block';
-                downloadBtn.style.marginTop = '10px'; // Add some spacing above the button
-                
-                // Append download button to the QR code container
-                document.getElementById('qr-code-container').appendChild(downloadBtn);
-            } else {
-                alert('Please enter valid text or URL and size.');
-            }
+            // Generate SVG Blob and set download link
+            const svgElement = qrCode;
+            const svgBlob = new Blob([svgElement.outerHTML], { type: 'image/svg+xml' });
+            const svgUrl = URL.createObjectURL(svgBlob);
+
+            const downloadSvgBtn = document.getElementById('download-svg');
+            downloadSvgBtn.href = svgUrl;
+            downloadSvgBtn.download = 'qrcode.svg';
+
+            // Create canvas to convert SVG to PNG
+            const canvas = document.createElement('canvas');
+            canvas.width = inputDim;
+            canvas.height = inputDim;
+            const ctx = canvas.getContext('2d');
+
+            const img = new Image();
+            const svgData = new XMLSerializer().serializeToString(svgElement);
+            const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
+
+            img.onload = function () {
+                ctx.drawImage(img, 0, 0);
+
+                const pngUrl = canvas.toDataURL('image/png');
+                const downloadPngBtn = document.getElementById('download-png');
+                downloadPngBtn.href = pngUrl;
+                downloadPngBtn.download = 'qrcode.png';
+            };
+
+            img.src = svgDataUrl;
+
+            // Show download buttons
+            document.getElementById('download-buttons').classList.remove('hidden');
         };
     </script>
-
-    <a href="/qrcode/own">alternative own</a>
-    <br>
-    <a href="/qrcode/jquery">alternative jquery</a>
-    <br>
 </body>
+
 </html>
