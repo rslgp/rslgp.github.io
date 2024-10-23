@@ -1,38 +1,100 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <!-- https://github.com/davidshimjs/qrcodejs/blob/master/qrcode.min.js -->
-     <!-- it can work offline by downloading and using locally -->
-    <!-- <script src="qrcode.min.js"></script> -->
-    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
-</head>
-
-<body>
-    <a href="/qrcode/2">alternative svg</a>
-    <br>
-    <textarea id="content" cols="30" rows="10"></textarea>
-    <input type="button" value="CRIAR" onclick="genQR()">
-
-    <div id="qrcode"></div>
-    <script>
-        function genQR() {
-
-            var content = document.getElementById("content").value;
-            var qrcode = new QRCode(document.getElementById("qrcode"), {
-                text: content,
-                width: 1080,
-                height: 1080,
-                colorDark: "#000000",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H
-            });
-
+    <meta charset="utf-8" />
+    <title>QR Code Generator</title>
+    <style type="text/css">
+        * {
+            padding: 0;
+            margin: 0;
         }
-    </script>
-</body>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f9f9f9;
+        }
+        svg {
+            border: 1px #eee solid;
+            margin-top: 20px;
+        }
+        input {
+            margin-bottom: 10px;
+            padding: 10px;
+            width: 300px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px; /* Added margin for better spacing */
+        }
+    </style>
+    <script src="qrcode.min.js"></script>
+</head>
+<body>
+    <h1>QR Code Generator</h1>
+    <input type="text" id="input-content" placeholder="Enter text or URL" />
+    <button id="generate-btn">Generate QR Code</button>
+    
+    <div id="qr-code-container">
+        <!-- QR Code will be displayed here -->
+    </div>
 
+    <script>
+        "use strict";
+
+        document.getElementById('generate-btn').onclick = function () {
+            const inputContent = document.getElementById('input-content').value;
+
+            if (inputContent) {
+                // Clear previous QR codes and download button
+                document.getElementById('qr-code-container').innerHTML = '';
+
+                // Create QR code
+                const qrCode = new QRCode({
+                    msg: inputContent,
+                    dim: 256,
+                    pad: 4,
+                    mtx: -1,
+                    ecl: "H",
+                    ecb: 1,
+                    pal: ["#000", "#fff"],
+                    vrb: 0,
+                });
+
+                // Append QR code to the container
+                document.getElementById('qr-code-container').appendChild(qrCode);
+				// console.log(qrCode) 
+                // Generate SVG Blob and update download link
+                const svgElement = qrCode;
+                const svgBlob = new Blob([svgElement.outerHTML], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(svgBlob);
+
+                // Create a download button inside the container
+                const downloadBtn = document.createElement('a');
+                downloadBtn.href = url;
+                downloadBtn.download = 'qrcode.svg';
+                downloadBtn.innerText = 'Download QR Code as SVG';
+                downloadBtn.style.display = 'block';
+                downloadBtn.style.marginTop = '10px'; // Add some spacing above the button
+                
+                // Append download button to the QR code container
+                document.body.appendChild(downloadBtn);
+            } else {
+                alert('Please enter some text or URL');
+            }
+        };
+    </script>
+
+    
+<a href="/qrcode/own">alternative own</a>
+<br>
+<a href="/qrcode/jquery">alternative jquery</a>
+<br>
+</body>
 </html>

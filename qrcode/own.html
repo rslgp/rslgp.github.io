@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- https://github.com/davidshimjs/qrcodejs/blob/master/qrcode.min.js -->
+     <!-- it can work offline by downloading and using locally -->
+    <!-- <script src="qrcode.min.js"></script> -->
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+</head>
+
+<body>
+    <textarea id="content" cols="30" rows="10"></textarea>
+    <input type="button" value="CRIAR" onclick="genQR()">
+
+    <div id="qrcode"></div>
+    <script>
+        function genQR() {
+
+            var content = document.getElementById("content").value;
+            var qrcode = new QRCode(document.getElementById("qrcode"), {
+                text: content,
+                width: 1080,
+                height: 1080,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+        }
+    </script>
+</body>
+
+</html>
