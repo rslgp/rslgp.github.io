@@ -20,6 +20,10 @@
             padding: 10px;
             display: none;
         }
+        #download-btn {
+            margin-top: 20px;
+            display: none; /* Initially hidden */
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.qrcode/1.0/jquery.qrcode.min.js"></script>
@@ -31,6 +35,7 @@
     <button id="generate-btn">Generate QR Code</button>
 
     <div id="qr-code"></div>
+    <a id="download-btn" href="#" download="qrcode.svg">Download QR Code as SVG</a>
 
     <script>
         $(document).ready(function() {
@@ -39,7 +44,8 @@
                 $('#qr-code').empty().show(); // Clear previous QR and show the container
 
                 if (inputText) {
-                    $('#qr-code').qrcode({
+                    // Generate QR Code
+                    const qrCode = $('#qr-code').qrcode({
                         text: inputText,
                         render: 'image',
                         ecLevel: 'H',
@@ -47,6 +53,14 @@
                         fill: '#000000',
                         background: '#ffffff'
                     });
+
+                    // Create an SVG element
+                    const svgData = qrCode.find('img').attr('src');
+                    const svgBlob = new Blob([svgData], { type: 'image/svg+xml' });
+                    const url = URL.createObjectURL(svgBlob);
+                    
+                    // Set the download link
+                    $('#download-btn').attr('href', url).show(); // Show download button
                 } else {
                     alert('Please enter some text or URL');
                 }
