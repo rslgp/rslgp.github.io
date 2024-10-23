@@ -13,17 +13,23 @@
 
 <body>
     <textarea id="content" cols="30" rows="10"></textarea>
+    <br/>
+    <input type="number" id="input-dim" placeholder="Enter size (e.g., 256)" min="1" value="256" />
+    <br/>
     <input type="button" value="CRIAR" onclick="genQR()">
 
     <div id="qrcode"></div>
     <script>
-        function genQR() {
+        function genQR() {            
+            const content = document.getElementById("content").value;
+            const inputDim = parseInt(document.getElementById('input-dim').value, 10);
 
-            var content = document.getElementById("content").value;
-            var qrcode = new QRCode(document.getElementById("qrcode"), {
+            if (!(content && !isNaN(inputDim) && inputDim > 0)) return;
+            
+            const qrcode = new QRCode(document.getElementById("qrcode"), {
                 text: content,
-                width: 1080,
-                height: 1080,
+                width: inputDim,
+                height: inputDim,
                 colorDark: "#000000",
                 colorLight: "#ffffff",
                 correctLevel: QRCode.CorrectLevel.H

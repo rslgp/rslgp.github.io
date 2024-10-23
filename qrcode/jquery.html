@@ -32,6 +32,9 @@
 
     <h1>QR Code Generator</h1>
     <input type="text" id="input-text" placeholder="Enter text or URL" />
+    <br/>
+    <input type="number" id="input-dim" placeholder="Enter size (e.g., 256)" min="1" value="256" />
+    
     <button id="generate-btn">Generate QR Code</button>
 
     <div id="qr-code"></div>
@@ -41,6 +44,11 @@
         $(document).ready(function() {
             $('#generate-btn').click(function() {
                 const inputText = $('#input-text').val();
+
+                const inputDim = parseInt(document.getElementById('input-dim').value, 10);
+
+                if (!(inputText && !isNaN(inputDim) && inputDim > 0)) return;
+
                 $('#qr-code').empty().show(); // Clear previous QR and show the container
 
                 if (inputText) {

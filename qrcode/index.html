@@ -39,6 +39,7 @@
 <body>
     <h1>QR Code Generator</h1>
     <input type="text" id="input-content" placeholder="Enter text or URL" />
+    <input type="number" id="input-dim" placeholder="Enter size (e.g., 256)" min="1" value="256" />
     <button id="generate-btn">Generate QR Code</button>
     
     <div id="qr-code-container">
@@ -50,15 +51,16 @@
 
         document.getElementById('generate-btn').onclick = function () {
             const inputContent = document.getElementById('input-content').value;
+            const inputDim = parseInt(document.getElementById('input-dim').value, 10);
 
-            if (inputContent) {
-                // Clear previous QR codes and download button
+            if (inputContent && !isNaN(inputDim) && inputDim > 0) {
+                // Clear previous QR code and download button
                 document.getElementById('qr-code-container').innerHTML = '';
 
-                // Create QR code
+                // Create QR code with the specified dimensions
                 const qrCode = new QRCode({
                     msg: inputContent,
-                    dim: 256,
+                    dim: inputDim,  // Use the user-defined size
                     pad: 4,
                     mtx: -1,
                     ecl: "H",
@@ -69,9 +71,9 @@
 
                 // Append QR code to the container
                 document.getElementById('qr-code-container').appendChild(qrCode);
-				// console.log(qrCode) 
+
                 // Generate SVG Blob and update download link
-                const svgElement = qrCode;
+                const svgElement = qrCode; // Use the generated SVG element
                 const svgBlob = new Blob([svgElement.outerHTML], { type: 'image/svg+xml' });
                 const url = URL.createObjectURL(svgBlob);
 
@@ -84,17 +86,16 @@
                 downloadBtn.style.marginTop = '10px'; // Add some spacing above the button
                 
                 // Append download button to the QR code container
-                document.body.appendChild(downloadBtn);
+                document.getElementById('qr-code-container').appendChild(downloadBtn);
             } else {
-                alert('Please enter some text or URL');
+                alert('Please enter valid text or URL and size.');
             }
         };
     </script>
 
-    
-<a href="/qrcode/own">alternative own</a>
-<br>
-<a href="/qrcode/jquery">alternative jquery</a>
-<br>
+    <a href="/qrcode/own">alternative own</a>
+    <br>
+    <a href="/qrcode/jquery">alternative jquery</a>
+    <br>
 </body>
 </html>
