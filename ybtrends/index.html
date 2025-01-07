@@ -4,96 +4,107 @@
 
 <head>
 
- <link rel="stylesheet" href="css/styleBox.css">
- <link rel="stylesheet" href="css/stylePip.css">
- <link rel="stylesheet" href="css/styleProgress.css">
+	<link rel="stylesheet" href="css/styleBox.css">
+	<link rel="stylesheet" href="css/stylePip.css">
+	<link rel="stylesheet" href="css/styleProgress.css">
 
-<!--<script async="" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script><script async="" src="chrome-extension://obkfjhifkbhimlocpddgamonjihinpak/script/safebrowse.js"></script><script src="//assets.codepen.io/assets/editor/live/console_runner-d0a557e5cb67f9cd9bbb9673355c7e8e.js"></script>
+	<!--<script async="" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script><script async="" src="chrome-extension://obkfjhifkbhimlocpddgamonjihinpak/script/safebrowse.js"></script><script src="//assets.codepen.io/assets/editor/live/console_runner-d0a557e5cb67f9cd9bbb9673355c7e8e.js"></script>
 <style>.ad
 {display:none !important;}</style>
 <script src="//assets.codepen.io/assets/editor/live/events_runner-21174b4c7273cfddc124acb0876792e0.js"></script><script src="//assets.codepen.io/assets/editor/live/css_live_reload_init-7618a0de08795409d8f6c9ef6805f7b2.js"></script><meta charset="UTF-8"><meta name="robots" content="noindex"><link rel="canonical" href="https://codepen.io/joshbader/pen/QjOyqv">
 -->
-<link href="https://fonts.googleapis.com/css?family=Roboto:100,100italic,300,300italic,400,400italic,500,500italic,700,700italic,900,900italic" rel="stylesheet" type="text/css">
-<link rel="stylesheet prefetch" href="css/normalize.css">
-<script>
-	function isJapanese(text){
-		return text.match(/(?:[一-龯]|[ぁ-んァ-ン])/);
-	}
-</script>
+	<link
+		href="https://fonts.googleapis.com/css?family=Roboto:100,100italic,300,300italic,400,400italic,500,500italic,700,700italic,900,900italic"
+		rel="stylesheet" type="text/css">
+	<link rel="stylesheet prefetch" href="css/normalize.css">
+	<script>
+		function isJapanese(text) {
+			return text.match(/(?:[一-龯]|[ぁ-んァ-ン])/);
+		}
+	</script>
 
 </head>
 
 <body onload="search()">
-<!--progress bar -->	
-<table id="progressTable">
-  <tbody><tr>
-    
-    <td>
-		<div class="clickable">
-			<div class="display">
-				<div class="progress"></div>
-			</div>
-		</div>
-	</td>
-  <td><div class="number"></div></td>
-  <td><div class="statusProgress"></div></td>
-    </tr>
-  </tbody></table>
-<!-- fim progress bar-->
+	<!--progress bar -->
+	<table id="progressTable">
+		<tbody>
+			<tr>
 
-<!-- order by country or views-->
-<button onClick="getOnlyInOrderTrends()">order by views</button>
-<button onClick="getLocalData()">order by country</button>
-<button onClick="mostrarLinksSalvos()">saved</button>
-<button onClick="mostrarStatistic()">statistic</button>
-<button id="loadingStuck" onClick="exibirResultados()">loading stuck</button>
+				<td>
+					<div class="clickable">
+						<div class="display">
+							<div class="progress"></div>
+						</div>
+					</div>
+				</td>
+				<td>
+					<div class="number"></div>
+				</td>
+				<td>
+					<div class="statusProgress"></div>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+	<!-- fim progress bar-->
+
+	<!-- order by country or views-->
+	<button onClick="getOnlyInOrderTrends()">order by views</button>
+	<button onClick="getOnlyInOrderLikes()">order by likes</button>
+	<button onClick="getLocalData()">order by country</button>
+	<button onClick="mostrarLinksSalvos()">saved</button>
+	<button onClick="mostrarStatistic()">statistic</button>
+	<button id="loadingStuck" onClick="exibirResultados()">loading stuck</button>
 
 
-<div class="youtube">  
-	<div class="content-wrap PiP" style="padding-top: 12.25;">
+	<div class="youtube">
+		<div class="content-wrap PiP" style="padding-top: 12.25;">
 
-		<!-- minimize -->
-		<section class="video"> 
-			<div class="button-open" style="float:right">Open</div>
-			<div class="box" style="display: block;">
-				<button onClick="getOnlyInOrderTrends()">order(views)</button>
-				<button onClick="getLocalData()">order(country)</button>	
-				<button onClick="window.scrollTo(0,0);">pageUP</button>		
-				<button onClick="pageScroll();">scrollDown</button>	
-				<button onClick="pageScrollStop();">scrollStop</button>	
-				<button onClick="toggleMusic();">toggleMusic</button>		
-				<div class="button-close" style="float:right;">X</div>
-				<iframe id="videoPip" class="videoPip" style="width:40% height:480px;" src="http://www.youtube.com/embed/VIDEO_ID?autoplay=0" frameborder="0" allowfullscreen=""></iframe>
+			<!-- minimize -->
+			<section class="video">
+				<div class="button-open" style="float:right">Open</div>
+				<div class="box" style="display: block;">
+					<button onClick="getOnlyInOrderTrends()">order(views)</button>
+					<button onClick="getLocalData()">order(country)</button>
+					<button onClick="window.scrollTo(0,0);">pageUP</button>
+					<button onClick="pageScroll();">scrollDown</button>
+					<button onClick="pageScrollStop();">scrollStop</button>
+					<button onClick="toggleMusic();">toggleMusic</button>
+					<div class="button-close" style="float:right;">X</div>
+					<iframe id="videoPip" class="videoPip" style="width:40% height:480px;"
+						src="https://www.youtube.com/embed/VIDEO_ID?autoplay=0" frameborder="0"
+						allowfullscreen=""></iframe>
 
-			</div>
-		</section>
+				</div>
+			</section>
 
-		<!-- fim minimize -->
+			<!-- fim minimize -->
 
-		<!--
+			<!--
 		<section class="video">
 		<iframe id="videoPip" style="width:40% height:480px" src="https://www.youtube.com/embed/43NWzay3W4s?autoplay=0" frameborder="0" allowfullscreen></iframe>
 		</section>
 		-->
-		<section class="details">      
-			<div id="resultado">
-			</div>
-		</section>
-	</div>  
-</div>
+			<section class="details">
+				<div id="resultado">
+				</div>
+			</section>
+		</div>
+	</div>
 
 
-			<script src="jquery/1.12.4/jquery.min.js"></script>
-			<script src="jquery/2.2.4/jquery.min.js"></script>
-			
-			<script src="http://cin.ufpe.br/~rslgp/js/util.js"></script>
-			
-			<script src="js/minimize.js"></script>
-			<script src="js/ybtrends.js"></script>
-			<script src="js/progress.js"></script>
-			<script src="js/scroll.js"></script>
-			
+	<script src="jquery/1.12.4/jquery.min.js"></script>
+	<script src="jquery/2.2.4/jquery.min.js"></script>
+
+	<script src="/js/util.js"></script>
+
+	<script src="js/minimize.js"></script>
+	<script src="js/ybtrends.js"></script>
+	<script src="js/progress.js"></script>
+	<script src="js/scroll.js"></script>
+
 </body>
-			
+
 
 </html>

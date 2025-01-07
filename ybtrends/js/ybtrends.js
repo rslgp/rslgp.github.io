@@ -57,7 +57,11 @@
 	//const codigoPais=['AR', 'AT', 'AU', 'AZ', 'BR', 'BE', 'BG', 'BH', 'BY', 'CA', 'CH', 'CL', 'CO', 'DE', 'DZ', 'EG', 'FI', 'FR', 'GB', 'GE', 'HK', 'ID', 'IE', 'IL', 'IQ', 'IS', 'IT', 'JP', 'KE', 'KR', 'KW', 'LB', 'LK', 'MA', 'NO', 'NP', 'NZ', 'PE', 'PH', 'PL', 'PR', 'PT', 'RU', 'SA', 'SE', 'TW', 'UA', 'UG', 'VN', 'YE'];	
 	
 	//v5 44 -> min 6 videos russia + france - usa
-	const codigoPais=['AE', 'AR', 'AT', 'AU', 'BA', 'BR', 'BE', 'BH', 'BY', 'CA', 'CL', 'CO', 'DK', 'DZ', 'EG', 'ES', 'FR', 'GB', 'ID', 'IQ', 'IT', 'JO', 'JP', 'KZ', 'LU', 'LY', 'MX', 'PE', 'PH', 'PK', 'PL', 'PR', 'PT', 'RU', 'SN', 'TH', 'TR', 'TZ', 'UA', 'VN', 'YE', 'ZA', 'ZW'];
+	//const codigoPais=['AE', 'AR', 'AT', 'AU', 'BA', 'BR', 'BE', 'BH', 'BY', 'CA', 'CL', 'CO', 'DK', 'DZ', 'EG', 'ES', 'FR', 'GB', 'ID', 'IQ', 'IT', 'JO', 'JP', 'KZ', 'LU', 'LY', 'MX', 'PE', 'PH', 'PK', 'PL', 'PR', 'PT', 'RU', 'SN', 'TH', 'TR', 'TZ', 'UA', 'VN', 'YE', 'ZA', 'ZW'];
+	
+	//v6 53 2020 ativar love
+	const codigoPais=['AE', 'AR', 'AT', 'AU', 'BA', 'BR', 'BE', 'BH', 'BY', 'CA', 'CH', 'CL', 'CO', 'DE', 'DK', 'DZ', 'EE', 'EG', 'ES', 'FI', 'FR', 'GB', 'HU', 'ID', 'IE', 'IQ', 'IT', 'JO', 'JP', 'KZ', 'LU', 'LT', 'LY', 'MX', 'NO', 'NL', 'PE', 'PH', 'PK', 'PL', 'PR', 'PT', 'RU', 'SE', 'SN', 'TH', 'TR', 'TZ', 'UA', 'VN', 'YE', 'ZA', 'ZW'];
+	
 	
 	const tamanhoCodigoPais = codigoPais.length;
 	//const codigoPais=['AE', 'BR'];
@@ -202,7 +206,7 @@ function getMaxChunck(array){
 }
 
 function getTextoPadraoVideo(id,thumbURL,title,views,approvalRating){//,channelId
-	return '<p class="itemVideo"><img style="cursor:pointer" onClick="changeVideo('+"'"+id+"'"+')" src="'+thumbURL+'" width="136px" height="80px"> <a dir="ltr" id="'+id+'" style="cursor:pointer;" onClick="changeVideo('+"'"+id+"'"+')" >'+title+'</a> <button class="translate button" title="translate title" onClick="doGet('+"'"+title+"','"+id+"'"+')"></button> '+approvalRating+'% likes ( '+views+' views )<button class="save button" onClick="saveVideo('+"'"+id+"'"+')"></button></p>';//+" - channel:"+channelId
+	return '<p class="itemVideo"><img style="cursor:pointer" onClick="changeVideo('+"'"+id+"'"+')" src="'+thumbURL+'" width="136px" height="80px"> <a dir="ltr" id="'+id+'" style="cursor:pointer;" onClick="changeVideo('+"'"+id+"'"+')" >'+title+'</a> <button class="translate button" title="translate title" onClick="doGet('+"'"+title+"','"+id+"'"+')"></button> '+approvalRating+' likes ( '+views+' views )<button class="save button" onClick="saveVideo('+"'"+id+"'"+')"></button></p>';//+" - channel:"+channelId
 }
 
 var trendsDataInOrder;
@@ -224,11 +228,28 @@ function saveInOrderTrends(){
 	}
 	trendsDataInOrder= array;
 	localStorage.setItem("todayTrendsInOrder", topTrends);
+	
+	//likes%
+	array.sort(function(a, b){return Number(b.split('+')[3].split('%')[0])-Number(a.split('+')[3].split('%')[0]);});
+	
+	topTrends="";	
+	idArray;
+	for(var i in array){	
+		idArray = array[i].split('+');
+		thumbURL = 'https://i.ytimg.com/vi/'+idArray[1]+'/default.jpg';
+		topTrends += getTextoPadraoVideo(idArray[1],thumbURL,idArray[2],nFormatter(idArray[0]),idArray[3]);//,idArray[4]
+	}
+	trendsDataInOrder= array;
+	localStorage.setItem("todayTrendsInOrderLikes", topTrends);
+
 	//setCookie('bkViewID',backupMostViewID);
 	//setCookie('backupTitle',backupTitle);
 	//setCookieData();
 }
 
+function getOnlyInOrderLikes(){
+	outputResultado.innerHTML = localStorage.getItem("todayTrendsInOrderLikes");
+}
 function getOnlyInOrderTrends(){
 	outputResultado.innerHTML = localStorage.getItem("todayTrendsInOrder");
 }
@@ -297,9 +318,13 @@ var dia2,mes2,date2,timeDiff,diffDays;
 				dislike = parseInt(queryResult[resultAtual].statistics.dislikeCount);
 				ratingsTotal = (likes*1 + dislike*1);
 				approvalRating = Math.round((likes*100)/ratingsTotal);
+				
+				//dislike desativado https://wersm.com/dislike-counts-will-no-longer-be-publicly-visible-on-youtube-videos/
+				approvalRating = Math.round((likes*100)/views)+"% "+nFormatter(likes);
 			}catch(e){
 				views=minViews+1;
-				approvalRating=71;
+				//approvalRating=71;
+				approvalRating = Math.round((likes*100)/views)+"% "+nFormatter(likes);
 			   //console.log("esse video http://youtu.be/"+id+" nao possui statistics");
 			}
 			
@@ -307,7 +332,7 @@ var dia2,mes2,date2,timeDiff,diffDays;
 			minusculo=title.toLowerCase();
 			dias=days_between(publishedAt);
 			
-			if(  /*dias < 7 &&*/ views >= minViews && approvalRating >= 70 && ( ( minusculo ).match(/(?:minecraft|roblox|toy|peppa|clash|fifa |copa|football|ighlights|Krappi|goal|onaldo|episode|الحلقه|phần|لحلقة|ficial|music|clip|teaser|trailer|movie|song)/) == null ) && ( minusculo.indexOf(episodioJaponeis)==-1 ) && ( minusculo.indexOf(episodioTurco)==-1 ) && ( ( channelId ).match(/(?:UC-SV8-bUJfXjrRMnp7F8Wzw|UCtinbF-Q-fVthA0qrFQTgXQ|UCD1Em4q90ZUK2R5HKesszJg|UC-lHJZR3Gqxm24_Vd_AJ5Yw)/) == null ) ){ //banir roman caley clashclans pewdiepie
+			if(  /*dias < 7 &&*/ views >= minViews && /*approvalRating >= 70 &&*/ ( ( minusculo ).match(/(?:minecraft|roblox|toy|peppa|clash|fifa |copa|football|ighlights|Krappi|goal|onaldo|episode|الحلقه|phần|لحلقة|ficial|music|clip|teaser|trailer|movie|song)/) == null ) && ( minusculo.indexOf(episodioJaponeis)==-1 ) && ( minusculo.indexOf(episodioTurco)==-1 ) && ( ( channelId ).match(/(?:UC-SV8-bUJfXjrRMnp7F8Wzw|UCtinbF-Q-fVthA0qrFQTgXQ|UCD1Em4q90ZUK2R5HKesszJg|UC-lHJZR3Gqxm24_Vd_AJ5Yw)/) == null ) ){ //banir roman caley clashclans pewdiepie
 			//if(  /*dias < 7 &&*/ views >= minViews && approvalRating >= 70 && ( ( minusculo ).match(/(?:minecraft|roblox|toy|peppa|clash|fifa |copa|football|ighlights|Krappi|goal|onaldo|episode|الحلقه|phần|لحلقة|teaser|trailer|movie|song)/) == null ) && ( minusculo.indexOf(episodioJaponeis)==-1 ) && ( minusculo.indexOf(episodioTurco)==-1 ) && ( ( channelId ).match(/(?:UC-SV8-bUJfXjrRMnp7F8Wzw|UCtinbF-Q-fVthA0qrFQTgXQ|UCD1Em4q90ZUK2R5HKesszJg|UC-lHJZR3Gqxm24_Vd_AJ5Yw)/) == null ) ){ //banir roman caley clashclans pewdiepie
 				titleTranslate=replaceAll(title,'#','');
 				titleTranslate=replaceAll(titleTranslate,'"','');
