@@ -1,0 +1,29 @@
+body {
+  background: #fff;
+}
+
+
+.button-open {
+	background-color:#00A8EA;
+  color: #fff;
+  border: solid 1px #0095cc;
+  border-radius: 10px;
+	cursor:pointer;
+  width: 50px;
+  height: auto;
+  text-align: center;
+  padding: 3px;
+}
+
+.button-close {
+	cursor:pointer;
+  width: 50px;
+  height: auto;
+  background-color: #00A8EA;
+  color: #fff;
+  border: solid 1px #0095cc;
+  text-align: center;
+  float: right;
+  padding: 3px;
+  border-radius: 3px;
+}
