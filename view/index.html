@@ -1,0 +1,47 @@
+<html>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+	<center>
+	<body>
+		<script>
+			var numero=1;
+			function ehDoOffice(buscaBruto){
+				var busca = buscaBruto+"";
+				var resultado = busca.indexOf("xlsx") > -1 || busca.indexOf("xls") > -1;
+				return resultado;
+			}
+			function buscar() {
+			
+				var busca = document.getElementById('busca').value;
+				document.getElementById('busca').value = "";
+				busca= encodeURIComponent(busca);
+				//alert(busca);
+				var link;
+				
+				if( ehDoOffice(busca) )
+					//link = 'https://view.officeapps.live.com/op/view.aspx?src='+busca;
+					link = 'https://view.officeapps.live.com/op/embed.aspx?src='+busca;
+				else
+					link = 'https://docs.google.com/viewer?embedded=true&chrome=false&dov=1&url='+busca;
+					
+					
+				document.getElementById('resultado').innerHTML += '<a href='+link+' target="_blank">visualizar online o arquivo</a>'+numero+'<br><br>';
+				numero++;			
+				window.open(
+				  link,
+				  '_blank' // <- This is what makes it open in a new window.
+				);
+			}
+			
+			function enter(e){
+				if (e.keyCode == 13 || e.which == 13)
+					buscar();
+			}
+			
+		</script>
+cole o link que iria fazer baixar o arquivo (link de download) <br><input id="busca" type="text" onclick="this.select();" onkeypress="enter(event);"></input>
+		<button type="button" onclick="buscar()">Ja inseri!</button><br><br><br>
+		<p id="resultado"></p>
+	</body>
+	</center>
+	</div>
+</html>
