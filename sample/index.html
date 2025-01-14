@@ -1,0 +1,48 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252"><style type="text/css"></style></head><body>
+	
+		<script>
+			function replaceAll(str, de, para){
+				var pos = str.indexOf(de);
+				while (pos > -1){
+					str = str.replace(de, para);
+					pos = str.indexOf(de);
+				}
+				return (str);
+			}
+			
+			function siteCustomSearch(link,busca,site){
+				var linkhtml = link+busca;
+					document.getElementById('resultado').innerHTML += '<a href='+linkhtml+' target="_blank">busca '+site+'</a><br><br>';
+			}
+			function buscar() {				
+				var busca = document.getElementById('busca').value,
+				busca= encodeURIComponent(busca);
+				busca= replaceAll(busca," ","+");
+				busca= replaceAll(busca,"%20","+");
+				//alert(busca);
+				
+				//var linkhtml = 'https://www.google.com/?gws_rd=ssl#q='+busca+'+AND+site:codepen.io+OR+site:cssdeck.com+OR+site:jsfiddle.net+OR+site:thecodeplayer.com+OR+site:jsbin.com'
+				var linkhtml = 'https://www.google.com/search?q='+busca+'+AND+site:codepen.io+OR+site:cssdeck.com+OR+site:jsfiddle.net+OR+site:thecodeplayer.com+OR+site:jsbin.com'
+				
+				window.open(linkhtml);
+			
+			}
+
+			function enter(e){
+				if (e.keyCode == 13 || e.which == 13)
+					buscar();
+			}
+			
+		</script>
+<br>
+	<center>
+	digite a busca <input id="busca" type="text" onclick="this.select();" onkeypress="enter(event);">
+			<button type="button" onclick="buscar()">Ja inseri!</button>
+	</center>
+<br>
+	<center>
+		<p id="resultado"></p>
+	
+	</center>
+
+</body></html>
