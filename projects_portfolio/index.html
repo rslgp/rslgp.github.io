@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Highlights</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f9;
+      color: #333;
+    }
+    header {
+      text-align: center;
+      padding: 2rem;
+      background: #222;
+      color: #fff;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: auto;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .card:hover {
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+    .card h2 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      color: #0077cc;
+    }
+    .card p {
+      flex: 1;
+      white-space: pre-line;
+    }
+    .card a {
+      text-decoration: none;
+      color: #fff;
+      background: #0077cc;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      text-align: center;
+      margin-top: 1rem;
+    }
+    .card a:hover {
+      background: #005fa3;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Project Highlights</h1>
+    <p>Selected projects and contributions</p>
+  </header>
+
+  <section class="grid" id="projectGrid"></section>
+
+  <script>
+    // 🔹 Just edit this array to add new projects
+    const projects = [
+      {
+        title: "MapaFome",
+        description: "National mapping platform for hunger relief using Node.js, GoogleSheets, and React.",
+        link: "https://mapafome.com.br"
+      },
+      {
+        title: "Project Zomboid Mod",
+        description: "Lua-based mods with 140k+ Steam users, adding unique mechanics and gameplay systems.",
+        link: "https://rslgp.github.io/steam_workshop/"
+      },
+      {
+        title: "Insomnia → Swagger VSCode Extension",
+        description: "OpenAPI spec generator with 1.8k+ organic users on the VSCode Marketplace.",
+        link: "https://marketplace.visualstudio.com/items?itemName=rslgp.insomnia-to-swagger"
+      },
+      {
+        title: "Discord Bot",
+        description: "Custom automation and scraping bot for servers, supporting hundreds of active users.",
+        link: "https://drive.google.com/drive/folders/1CpWPs81n45q7t8r9Yuebfnt-CQto7CkP?usp=drive_link"
+      },
+      {
+        title: "View file without download",
+        description: "Using viewer from Google, Microsoft, be able to read pdf, ppt, docs without need to download local",
+        link: "https://rslgp.github.io/view/"
+      },
+      {
+        title: "Youtube most watched from every country",
+        description: "list the most-watched videos, by country, sorted by views\n(this helped me predict COVID-19 two months in advance in my country)",
+        link: "https://tiny.cc/youtubeRafael"
+      }
+    ];
+
+    const grid = document.getElementById("projectGrid");
+
+    projects.forEach(p => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <h2>${p.title}</h2>
+        <p>${p.description}</p>
+        <a href="${p.link}" target="_blank">View Project</a>
+      `;
+      grid.appendChild(card);
+    });
+  </script>
+</body>
+</html>
