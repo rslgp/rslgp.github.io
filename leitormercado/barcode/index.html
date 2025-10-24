@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>EAN-13 Barcode Generator</title>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.12.1/dist/JsBarcode.all.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background: #f5f5f5;
+    }
+    h2 { text-align: center; }
+    .container {
+      max-width: 400px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    label { display: block; margin-top: 10px; font-weight: bold; }
+    input[type="text"], input[type="color"] {
+      width: 100%;
+      padding: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+      margin-top: 5px;
+    }
+    input[type="color"] { height: 40px; padding: 0; }
+    button {
+      margin-top: 15px;
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      background: #0078d7;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover { background: #005fa3; }
+    .barcode { text-align: center; margin-top: 25px; }
+  </style>
+</head>
+<body>
+  <h2>EAN-13 Barcode Generator</h2>
+  <div class="container">
+    <label for="code">Enter EAN-13 Code:</label>
+    <input type="text" id="code" placeholder="e.g. 5901234123457" maxlength="13">
+
+    <label for="color">Choose Line Color:</label>
+    <input type="color" id="color" value="#000000">
+
+    <button id="generate">Generate Barcode</button>
+
+    <div class="barcode">
+      <svg id="barcode"></svg>
+    </div>
+  </div>
+
+  <script>
+    function getQueryParams() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        code: params.get("code") || "",
+        color: params.get("color") || "000000" // default black without #
+      };
+    }
+
+    function generateBarcode(code, color) {
+      if (!/^\d{13}$/.test(code)) {
+        alert("Please enter a valid 13-digit EAN-13 code.");
+        return;
+      }
+
+      // Ensure color starts with #
+      if (!color.startsWith("#")) color = "#" + color;
+
+      JsBarcode("#barcode", code, {
+        format: "ean13",
+        displayValue: true,
+        lineColor: color,
+        width: 2,
+        height: 80,
+        fontSize: 18,
+      });
+    }
+
+    const params = getQueryParams();
+    const codeInput = document.getElementById("code");
+    const colorInput = document.getElementById("color");
+
+    // Pre-fill inputs
+    if (params.code) codeInput.value = params.code;
+    if (params.color) colorInput.value = "#" + params.color;
+
+    // Generate automatically if query exists
+    if (params.code) generateBarcode(params.code, params.color);
+
+    document.getElementById("generate").addEventListener("click", () => {
+      generateBarcode(codeInput.value.trim(), colorInput.value.replace("#", ""));
+    });
+  </script>
+</body>
+</html>
