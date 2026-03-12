@@ -1,0 +1,89 @@
+<html>
+	<center>
+	<body>
+		<script>
+		/*
+			var links= [];
+			function fechar(){
+				for(index = 0; index < links.length; index++) {
+					links[index].close();
+				}
+			}*/
+			function replaceAll(str, de, para){
+				var pos = str.indexOf(de);
+				while (pos > -1){
+					str = str.replace(de, para);
+					pos = str.indexOf(de);
+				}
+				return (str);
+			}
+			function buscar() {
+			
+				var busca = document.getElementById('busca').value;
+				document.getElementById('traduzir').innerHTML = 'busca: '+busca+'<br><br>';
+				busca= encodeURIComponent(busca);
+				busca= replaceAll(busca," ","+");
+				//alert(busca);
+				var link;
+				link = 'https://www.google.com/search?site=&source=hp&q='+busca+'+site%3Acs.cmu.edu';
+				//document.getElementById('resultado').innerHTML = 'busca: '+busca+'<br><br>';
+				document.getElementById('resultado').innerHTML='';
+				document.getElementById('resultado').innerHTML += '<a href='+link+' target="_blank">cmu rank #1 programming language</a><br><br>';
+				
+				
+				link = 'https://www.youtube.com/user/MIT/search?query='+busca;
+				document.getElementById('resultado').innerHTML += '<a href='+link+' target="_blank">[youtube] mit rank #4 programming language</a><br><br>';				
+				
+				link = 'https://www.google.com/search?site=&source=hp&q='+busca+'+site%3Acs.princeton.edu';
+				document.getElementById('resultado').innerHTML += '<a href='+link+' target="_blank">princeton rank #5 programming language</a><br><br>';
+				
+				link = 'https://www.google.com/search?site=&source=hp&q='+busca+'+site%3Acs.illinois.edu';
+				document.getElementById('resultado').innerHTML += '<a href='+link+' target="_blank">illinois rank #9 programming language</a><br><br>';
+								
+				link = 'https://www.google.com/search?site=&source=hp&q='+busca+'+site%3Acis.upenn.edu';
+				document.getElementById('resultado').innerHTML += '<a href='+link+' target="_blank">[java] upenn rank #7 programming language</a><br><br>';
+				
+				link = 'https://www.google.com/search?site=&source=hp&q='+busca+'+site%3Acs.cornell.edu';
+				document.getElementById('resultado').innerHTML += '<a href='+link+' target="_blank">~medio cornell rank #6 programming language</a><br><br>';
+				
+				link = 'https://www.google.com/search?site=&source=hp&q='+busca+'+"c"+site%3Astackoverflow.com+-pt.stackoverflow.com';
+				document.getElementById('resultado').innerHTML += '<a href='+link+' target="_blank">stackoverflow</a><br><br>';
+				
+				
+				
+				
+			
+			}
+			function enter(e){
+				if (e.keyCode == 13 || e.which == 13)
+					buscar();
+			}
+			
+		</script>
+digite a busca<input id="busca" type="text" onclick="this.select();" onkeypress="enter(event);"></input>
+		<button type="button" onclick="buscar()">Ja inseri!</button><br><br><br>
+		
+        
+		<div class="notranslate" style="float:right">, sugestao para encontrar codigo, incluir #include na busca</div>
+		<a style="float:right" target="_blank" href="http://grad-schools.usnews.rankingsandreviews.com/best-graduate-schools/top-science-schools/computer-programming-rankings">ranking</a>
+		<br>
+		<p class="translate" id="traduzir"></p>
+		<p class="notranslate" id="resultado"></p>
+	</body>
+	</center>
+	
+	<br>
+		<!--google translate-->
+	<div style="float:right">		
+		<div id="google_translate_element"></div><script type="text/javascript">
+function googleTranslateElementInit() {
+  new google.translate.TranslateElement({pageLanguage: 'pt', includedLanguages: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE, autoDisplay: false}, 'google_translate_element');
+}
+</script><script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+        
+        
+
+	</div>
+
+		<!-- fim -->
+</html>
