@@ -385,10 +385,25 @@ body::before{
 // ══════════════════════════════════════════════════════════════════
 let AC = null;
 const ND = {};
+let AC_READY = false;
 
-function getAC() {
-  if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
-  if (AC.state === 'suspended') AC.resume();
+// Cria e desbloqueia o AudioContext — precisa ser chamado dentro de um gesto
+async function unlockAC() {
+  if (!AC) {
+    AC = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 });
+  }
+  if (AC.state === 'suspended') {
+    await AC.resume();
+  }
+  if (!AC_READY && AC.state === 'running') {
+    // Toca um silêncio de 1ms pra desbloquear o pipeline de áudio no iOS/Android
+    const buf = AC.createBuffer(1, 1, AC.sampleRate);
+    const src = AC.createBufferSource();
+    src.buffer = buf;
+    src.connect(AC.destination);
+    src.start(0);
+    AC_READY = true;
+  }
   return AC;
 }
 
@@ -400,29 +415,30 @@ function toHz(note) {
   return 440 * Math.pow(2, ((+r[2] + 1) * 12 + M[r[1]] - 69) / 12);
 }
 
-function noteOn(id, hz) {
+async function noteOn(id, hz) {
   if (ND[id]) return;
-  const a = getAC();
+  const a = await unlockAC();
+  if (a.state !== 'running') return;  // ainda bloqueado — ignora
 
-  // Master gain
+  // Master gain — volume maior pra ouvir bem no celular
   const mg = a.createGain();
   mg.gain.setValueAtTime(0, a.currentTime);
-  mg.gain.linearRampToValueAtTime(0.16, a.currentTime + 0.022);
+  mg.gain.linearRampToValueAtTime(0.28, a.currentTime + 0.018);
 
   // Filtro passa-baixa pra timbre mais quente
   const lp = a.createBiquadFilter();
   lp.type = 'lowpass';
-  lp.frequency.value = 2800;
-  lp.Q.value = 0.4;
+  lp.frequency.value = 3200;
+  lp.Q.value = 0.5;
   lp.connect(mg);
   mg.connect(a.destination);
 
   // Dois osciladores ligeiramente desafinados = caráter de sanfona (duas palhetas)
   const os = [
-    [hz,       0.55, 'sawtooth'],
-    [hz*1.004, 0.32, 'sawtooth'],
-    [hz*2,     0.08, 'sawtooth'],  // 2nd harmonic
-    [hz*0.5,   0.05, 'sine'],      // sub fundamental
+    [hz,       0.5,  'sawtooth'],
+    [hz*1.005, 0.35, 'sawtooth'],
+    [hz*2,     0.1,  'sawtooth'],
+    [hz*0.5,   0.05, 'sine'],
   ].map(([f, g, t]) => {
     const o = a.createOscillator(), gn = a.createGain();
     o.type = t; o.frequency.value = f; gn.gain.value = g;
@@ -437,9 +453,11 @@ function noteOff(id) {
   const n = ND[id];
   if (!n) return;
   delete ND[id];
-  const a = getAC();
-  n.mg.gain.linearRampToValueAtTime(0, a.currentTime + 0.09);
-  setTimeout(() => n.os.forEach(o => { try { o.stop(); } catch(e) {} }), 130);
+  if (!AC) return;
+  n.mg.gain.cancelScheduledValues(AC.currentTime);
+  n.mg.gain.setValueAtTime(n.mg.gain.value, AC.currentTime);
+  n.mg.gain.linearRampToValueAtTime(0, AC.currentTime + 0.08);
+  setTimeout(() => n.os.forEach(o => { try { o.stop(); } catch(e) {} }), 110);
 }
 
 function allOff() {
@@ -511,7 +529,7 @@ function setupPianoTouch() {
     tmap[tid] = n;
     el.classList.add('pr');
     const hz = toHz(n);
-    noteOn('l_' + n, hz);
+    noteOn('l_' + n, hz);   // async — dispara sem bloquear o touch handler
     send('on', { id: n, hz });
     document.getElementById('hint-r').style.display = 'none';
   }
@@ -527,7 +545,7 @@ function setupPianoTouch() {
   }
 
   piano.addEventListener('touchstart', e => {
-    e.preventDefault(); getAC();
+    e.preventDefault(); unlockAC();
     [...e.changedTouches].forEach(t => press(t.identifier, keyAt(t.clientX, t.clientY)));
   }, { passive: false });
 
@@ -552,7 +570,7 @@ function setupPianoTouch() {
   // Mouse support (desktop testing)
   let mouseDown = false;
   piano.addEventListener('mousedown', e => {
-    getAC(); mouseDown = true;
+    unlockAC(); mouseDown = true;
     press('mouse', e.target.dataset.n ? e.target : null);
   });
   piano.addEventListener('mouseover', e => {
@@ -622,7 +640,7 @@ function setupBassTouch() {
     el.classList.add('pr');
     ns.forEach((n, i) => {
       const id = bid + '_' + i, hz = toHz(n);
-      noteOn('l_' + id, hz);
+      noteOn('l_' + id, hz);   // async — dispara sem bloquear
       send('on', { id, hz });
     });
   }
@@ -640,7 +658,7 @@ function setupBassTouch() {
   }
 
   scr.addEventListener('touchstart', e => {
-    e.preventDefault(); getAC();
+    e.preventDefault(); unlockAC();
     [...e.changedTouches].forEach(t => pressC(t.identifier, btnAt(t.clientX, t.clientY)));
   }, { passive: false });
 
@@ -656,7 +674,7 @@ function setupBassTouch() {
   // Mouse support
   let mdown = false;
   scr.addEventListener('mousedown', e => {
-    getAC(); mdown = true;
+    unlockAC(); mdown = true;
     pressC('mouse', btnAt(e.clientX, e.clientY));
   });
   document.addEventListener('mouseup', () => {
