@@ -227,26 +227,6 @@ body::before{
   justify-content:flex-start;padding:48px 16px 12px;gap:14px;
   background:radial-gradient(ellipse 100% 80% at 50% 0%,#1a0c02 0%,#0e0500 100%);
 }
-
-/* ── SINGLE SCREEN ────────────────────────────────────────────────── */
-#s-single{
-  justify-content:flex-start;padding:0;gap:0;
-  background:#0a0400;
-}
-.single-bass{
-  flex:1;overflow-y:auto;overflow-x:hidden;
-  width:100%;padding:48px 16px 10px;
-  display:flex;flex-direction:column;gap:14px;
-  background:radial-gradient(ellipse 100% 60% at 50% 0%,#1a0c02 0%,#0a0400 100%);
-}
-.single-bass::-webkit-scrollbar{width:3px;}
-.single-bass::-webkit-scrollbar-track{background:transparent;}
-.single-bass::-webkit-scrollbar-thumb{background:#3a1800;border-radius:3px;}
-/* Divider entre bass e piano na tela única */
-.single-divider{
-  width:100%;height:1px;flex-shrink:0;
-  background:linear-gradient(90deg,transparent,#4a2408 30%,#4a2408 70%,transparent);
-}
 .bsec{width:100%;}
 .blbl{
   font-size:.62rem;color:var(--text-ghost);text-transform:uppercase;
@@ -334,14 +314,6 @@ body::before{
       <small>Baixos + acordes maiores e menores</small>
     </span>
   </button>
-
-  <button class="role-card" id="btn-single">
-    <span class="rc-icon">🪗</span>
-    <span class="rc-text">
-      <b>Tela Única</b>
-      <small>Piano + baixos no mesmo celular</small>
-    </span>
-  </button>
 </div>
 
 <!-- ══ SCREEN: RIGHT — CONNECT ══════════════════════════════════════ -->
@@ -407,119 +379,80 @@ body::before{
   </div>
 </div>
 
-<!-- ══ SCREEN: SINGLE ═══════════════════════════════════════════════ -->
-<div id="s-single" class="screen">
-  <div class="sbar">
-    <button class="sbar-back" id="back-single">←</button>
-    <span class="sbar-role" style="margin-left:8px">🪗 Tela Única</span>
-  </div>
-
-  <!-- Baixos (roláveis) -->
-  <div class="single-bass" id="single-bass-area">
-    <div class="bsec">
-      <div class="blbl">Nota do Baixo</div>
-      <div class="brow" id="s-bass"></div>
-    </div>
-    <div class="bsec">
-      <div class="blbl">Acorde Maior</div>
-      <div class="brow" id="s-maj"></div>
-    </div>
-    <div class="bsec">
-      <div class="blbl">Acorde Menor</div>
-      <div class="brow" id="s-min"></div>
-    </div>
-  </div>
-
-  <div class="single-divider"></div>
-
-  <!-- Piano (fixo embaixo) -->
-  <div class="piano-shell" style="flex-shrink:0">
-    <div class="piano" id="piano-s"></div>
-  </div>
-</div>
-
 <script>
 // ══════════════════════════════════════════════════════════════════
-// ÁUDIO — Web Audio API, compatível com iOS Safari / Chrome
+// ÁUDIO — síntese de acordeon via Web Audio API
 // ══════════════════════════════════════════════════════════════════
 let AC = null;
-const ND = {};   // id → { osc[], gainNode }
+const ND = {};
+let AC_UNLOCKED = false;
 
-// Chamado sincronamente dentro de CADA handler de gesto.
-// iOS exige: criar + desbloquear dentro da mesma call stack do evento.
-// O buffer de silêncio é tocado sempre — overhead zero, garante unlock.
+// DEVE ser chamado sincronamente dentro do handler de gesto (iOS exige isso)
 function unlockAC() {
+  // Cria o contexto dentro do gesto — iOS só aceita assim
   if (!AC) {
-    AC = new (window.AudioContext || window.webkitAudioContext)();
+    AC = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 });
   }
-  if (AC.state !== 'running') {
-    AC.resume();  // síncrono, sem await — iOS exige isso
+  // resume() síncrono — não usar await (quebra o contexto de gesto no iOS)
+  if (AC.state === 'suspended') AC.resume();
+
+  // Buffer de silêncio: desbloqueia o pipeline de áudio no iOS/Safari
+  if (!AC_UNLOCKED) {
+    AC_UNLOCKED = true;
+    const buf = AC.createBuffer(1, 1, AC.sampleRate);
+    const src = AC.createBufferSource();
+    src.buffer = buf;
+    src.connect(AC.destination);
+    src.start(0);
   }
-  // Toca 1 frame de silêncio a cada gesto até o contexto estar running.
-  // Depois do primeiro sucesso, o contexto fica running e o custo é mínimo.
-  try {
-    const b = AC.createBuffer(1, 1, AC.sampleRate);
-    const s = AC.createBufferSource();
-    s.buffer = b;
-    s.connect(AC.destination);
-    s.start(0);
-  } catch(_) {}
 }
 
+// Converte nome de nota (ex: 'C#4') para frequência em Hz
 function toHz(note) {
-  const M = {C:0,'C#':1,Db:1,D:2,'D#':3,Eb:3,E:4,F:5,'F#':6,Gb:6,
-             G:7,'G#':8,Ab:8,A:9,'A#':10,Bb:10,B:11};
+  const M = { C:0,'C#':1,Db:1,D:2,'D#':3,Eb:3,E:4,F:5,'F#':6,Gb:6,G:7,'G#':8,Ab:8,A:9,'A#':10,Bb:10,B:11 };
   const r = note.match(/^([A-G][#b]?)(\d+)$/);
   if (!r) return 440;
   return 440 * Math.pow(2, ((+r[2] + 1) * 12 + M[r[1]] - 69) / 12);
 }
 
+// Síncrono — chamado sempre após unlockAC() dentro do mesmo handler
 function noteOn(id, hz) {
   if (ND[id] || !AC) return;
 
-  // Lookahead mínimo: 30ms pra dar margem ao resume() do iOS.
-  // Não usar 0 puro pois currentTime pode ainda ser 0 enquanto suspenso.
-  const t = AC.currentTime + 0.03;
+  const mg = AC.createGain();
+  mg.gain.setValueAtTime(0, AC.currentTime);
+  mg.gain.linearRampToValueAtTime(0.28, AC.currentTime + 0.018);
 
-  const gain = AC.createGain();
-  gain.gain.setValueAtTime(0.001, t);
-  gain.gain.exponentialRampToValueAtTime(0.35, t + 0.025);
-  gain.connect(AC.destination);
+  const lp = AC.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 3200;
+  lp.Q.value = 0.5;
+  lp.connect(mg);
+  mg.connect(AC.destination);
 
-  const filt = AC.createBiquadFilter();
-  filt.type = 'lowpass';
-  filt.frequency.value = 3000;
-  filt.connect(gain);
-
-  // Dois osciladores sawtooth desafinados = timbre de sanfona (duas palhetas)
-  const oscs = [
-    { f: hz,        g: 0.55 },
-    { f: hz * 1.006, g: 0.35 },
-    { f: hz * 2,    g: 0.08 },
-  ].map(({ f, g }) => {
-    const gn = AC.createGain();
-    gn.gain.value = g;
-    gn.connect(filt);
-    const o = AC.createOscillator();
-    o.type = 'sawtooth';
-    o.frequency.value = f;
-    o.connect(gn);
-    o.start(t);
+  const os = [
+    [hz,       0.5,  'sawtooth'],
+    [hz*1.005, 0.35, 'sawtooth'],
+    [hz*2,     0.1,  'sawtooth'],
+    [hz*0.5,   0.05, 'sine'],
+  ].map(([f, g, t]) => {
+    const o = AC.createOscillator(), gn = AC.createGain();
+    o.type = t; o.frequency.value = f; gn.gain.value = g;
+    o.connect(gn); gn.connect(lp); o.start();
     return o;
   });
 
-  ND[id] = { oscs, gain };
+  ND[id] = { os, mg };
 }
 
 function noteOff(id) {
   const n = ND[id];
   if (!n || !AC) return;
   delete ND[id];
-  const t = AC.currentTime;
-  n.gain.gain.cancelScheduledValues(t);
-  n.gain.gain.setValueAtTime(n.gain.gain.value, t);
-  n.gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-  setTimeout(() => n.oscs.forEach(o => { try { o.stop(); } catch(_) {} }), 150);
+  n.mg.gain.cancelScheduledValues(AC.currentTime);
+  n.mg.gain.setValueAtTime(n.mg.gain.value, AC.currentTime);
+  n.mg.gain.linearRampToValueAtTime(0, AC.currentTime + 0.08);
+  setTimeout(() => n.os.forEach(o => { try { o.stop(); } catch(e) {} }), 110);
 }
 
 function allOff() {
@@ -539,9 +472,9 @@ const PIANO_KEYS = [
 ];
 const BK_PARENT = {'C#':'C','Db':'C','D#':'D','Eb':'D','F#':'F','Gb':'F','G#':'G','Ab':'G','A#':'A','Bb':'A'};
 
-function buildPiano(targetId) {
-  const piano = document.getElementById(targetId);
-  if (!piano) return;
+function buildPiano() {
+  const piano = document.getElementById('piano');
+  piano.innerHTML = '';
   const whites = PIANO_KEYS.filter(k => k.w);
   const WP = 100 / whites.length;  // % por tecla branca
   const BP = WP * 0.62;            // % de largura da tecla preta
@@ -572,14 +505,14 @@ function buildPiano(targetId) {
   });
 }
 
-function setupPianoTouch(pianoId, hintId) {
-  const piano = document.getElementById(pianoId);
-  if (!piano) return;
+function setupPianoTouch() {
+  const piano = document.getElementById('piano');
   const tmap = {};  // touchId → note name
 
   function keyAt(x, y) {
+    // elementsFromPoint retorna do topo pra baixo — pega a tecla antes de qualquer outro elemento
     const els = document.elementsFromPoint(x, y);
-    for (const el of els) if (el.dataset && el.dataset.n && piano.contains(el)) return el;
+    for (const el of els) if (el.dataset && el.dataset.n) return el;
     return null;
   }
 
@@ -591,9 +524,9 @@ function setupPianoTouch(pianoId, hintId) {
     tmap[tid] = n;
     el.classList.add('pr');
     const hz = toHz(n);
-    noteOn('p_' + n, hz);
+    noteOn('l_' + n, hz);
     send('on', { id: n, hz });
-    if (hintId) { const h = document.getElementById(hintId); if (h) h.style.display = 'none'; }
+    document.getElementById('hint-r').style.display = 'none';
   }
 
   function release(tid) {
@@ -602,7 +535,7 @@ function setupPianoTouch(pianoId, hintId) {
     delete tmap[tid];
     const el = piano.querySelector(`[data-n="${n}"]`);
     if (el) el.classList.remove('pr');
-    noteOff('p_' + n);
+    noteOff('l_' + n);
     send('off', { id: n });
   }
 
@@ -629,7 +562,7 @@ function setupPianoTouch(pianoId, hintId) {
     [...e.changedTouches].forEach(t => release(t.identifier));
   }, { passive: false });
 
-  // Mouse support (desktop)
+  // Mouse support (desktop testing)
   let mouseDown = false;
   piano.addEventListener('mousedown', e => {
     unlockAC(); mouseDown = true;
@@ -668,10 +601,6 @@ function buildBass() {
   fillRow('r-bass', BASS,  'bt');
   fillRow('r-maj',  MAJOR, 'bM');
   fillRow('r-min',  MINOR, 'bm');
-  // tela única — rows separadas com prefixo 's' no bid
-  fillRow('s-bass', BASS,  'bt');
-  fillRow('s-maj',  MAJOR, 'bM');
-  fillRow('s-min',  MINOR, 'bm');
 }
 
 function fillRow(rowId, data, cls) {
@@ -687,9 +616,8 @@ function fillRow(rowId, data, cls) {
   });
 }
 
-function setupBassTouch(scrId) {
-  const scr = document.getElementById(scrId);
-  if (!scr) return;
+function setupBassTouch() {
+  const scr = document.getElementById('s-lplay');
   const tmap = {};  // touchId → {bid, ns, el}
 
   function btnAt(x, y) {
@@ -886,26 +814,13 @@ document.getElementById('back-lplay').addEventListener('click', () => {
   destroyPeer(); show('s-role');
 });
 
-// ── Tela Única
-document.getElementById('btn-single').addEventListener('click', () => {
-  destroyPeer();
-  show('s-single');
-});
-
-document.getElementById('back-single').addEventListener('click', () => {
-  destroyPeer(); allOff(); show('s-role');
-});
-
 // ══════════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════════
-buildPiano('piano');
-buildPiano('piano-s');
+buildPiano();
 buildBass();
-setupPianoTouch('piano',   'hint-r');
-setupPianoTouch('piano-s', null);
-setupBassTouch('s-lplay');
-setupBassTouch('single-bass-area');
+setupPianoTouch();
+setupBassTouch();
 </script>
 </body>
 </html>
