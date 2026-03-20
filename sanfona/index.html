@@ -385,26 +385,26 @@ body::before{
 // ══════════════════════════════════════════════════════════════════
 let AC = null;
 const ND = {};
-let AC_READY = false;
+let AC_UNLOCKED = false;
 
-// Cria e desbloqueia o AudioContext — precisa ser chamado dentro de um gesto
-async function unlockAC() {
+// DEVE ser chamado sincronamente dentro do handler de gesto (iOS exige isso)
+function unlockAC() {
+  // Cria o contexto dentro do gesto — iOS só aceita assim
   if (!AC) {
     AC = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 });
   }
-  if (AC.state === 'suspended') {
-    await AC.resume();
-  }
-  if (!AC_READY && AC.state === 'running') {
-    // Toca um silêncio de 1ms pra desbloquear o pipeline de áudio no iOS/Android
+  // resume() síncrono — não usar await (quebra o contexto de gesto no iOS)
+  if (AC.state === 'suspended') AC.resume();
+
+  // Buffer de silêncio: desbloqueia o pipeline de áudio no iOS/Safari
+  if (!AC_UNLOCKED) {
+    AC_UNLOCKED = true;
     const buf = AC.createBuffer(1, 1, AC.sampleRate);
     const src = AC.createBufferSource();
     src.buffer = buf;
     src.connect(AC.destination);
     src.start(0);
-    AC_READY = true;
   }
-  return AC;
 }
 
 // Converte nome de nota (ex: 'C#4') para frequência em Hz
@@ -415,32 +415,28 @@ function toHz(note) {
   return 440 * Math.pow(2, ((+r[2] + 1) * 12 + M[r[1]] - 69) / 12);
 }
 
-async function noteOn(id, hz) {
-  if (ND[id]) return;
-  const a = await unlockAC();
-  if (a.state !== 'running') return;  // ainda bloqueado — ignora
+// Síncrono — chamado sempre após unlockAC() dentro do mesmo handler
+function noteOn(id, hz) {
+  if (ND[id] || !AC) return;
 
-  // Master gain — volume maior pra ouvir bem no celular
-  const mg = a.createGain();
-  mg.gain.setValueAtTime(0, a.currentTime);
-  mg.gain.linearRampToValueAtTime(0.28, a.currentTime + 0.018);
+  const mg = AC.createGain();
+  mg.gain.setValueAtTime(0, AC.currentTime);
+  mg.gain.linearRampToValueAtTime(0.28, AC.currentTime + 0.018);
 
-  // Filtro passa-baixa pra timbre mais quente
-  const lp = a.createBiquadFilter();
+  const lp = AC.createBiquadFilter();
   lp.type = 'lowpass';
   lp.frequency.value = 3200;
   lp.Q.value = 0.5;
   lp.connect(mg);
-  mg.connect(a.destination);
+  mg.connect(AC.destination);
 
-  // Dois osciladores ligeiramente desafinados = caráter de sanfona (duas palhetas)
   const os = [
     [hz,       0.5,  'sawtooth'],
     [hz*1.005, 0.35, 'sawtooth'],
     [hz*2,     0.1,  'sawtooth'],
     [hz*0.5,   0.05, 'sine'],
   ].map(([f, g, t]) => {
-    const o = a.createOscillator(), gn = a.createGain();
+    const o = AC.createOscillator(), gn = AC.createGain();
     o.type = t; o.frequency.value = f; gn.gain.value = g;
     o.connect(gn); gn.connect(lp); o.start();
     return o;
@@ -451,9 +447,8 @@ async function noteOn(id, hz) {
 
 function noteOff(id) {
   const n = ND[id];
-  if (!n) return;
+  if (!n || !AC) return;
   delete ND[id];
-  if (!AC) return;
   n.mg.gain.cancelScheduledValues(AC.currentTime);
   n.mg.gain.setValueAtTime(n.mg.gain.value, AC.currentTime);
   n.mg.gain.linearRampToValueAtTime(0, AC.currentTime + 0.08);
@@ -529,7 +524,7 @@ function setupPianoTouch() {
     tmap[tid] = n;
     el.classList.add('pr');
     const hz = toHz(n);
-    noteOn('l_' + n, hz);   // async — dispara sem bloquear o touch handler
+    noteOn('l_' + n, hz);
     send('on', { id: n, hz });
     document.getElementById('hint-r').style.display = 'none';
   }
@@ -640,7 +635,7 @@ function setupBassTouch() {
     el.classList.add('pr');
     ns.forEach((n, i) => {
       const id = bid + '_' + i, hz = toHz(n);
-      noteOn('l_' + id, hz);   // async — dispara sem bloquear
+      noteOn('l_' + id, hz);
       send('on', { id, hz });
     });
   }
