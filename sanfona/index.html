@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0e0500">
+<title>🪗 Sanfona Digital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;}
+html,body{height:100%;height:100dvh;overflow:hidden;background:#0e0500;font-family:'Playfair Display',Georgia,serif;touch-action:none;}
+
+/* ── NOISE TEXTURE OVERLAY ────────────────────────────────────────── */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:1000;opacity:.6;
+}
+
+/* ── CSS VARS ─────────────────────────────────────────────────────── */
+:root{
+  --gold:#c8952a;--gold-lt:#f0c050;--gold-dim:#7a5818;
+  --bg:#0e0500;--bg2:#180c02;--bg3:#241408;
+  --red:#e84020;--green:#28d870;
+  --couro:#3a1a06;--couro-lt:#5c2e10;
+  --text:#e8c870;--text-dim:#8a6030;--text-ghost:#4a3018;
+}
+
+/* ── SCREENS ──────────────────────────────────────────────────────── */
+.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;}
+.screen.active{display:flex;}
+
+/* ── ROLE SCREEN ──────────────────────────────────────────────────── */
+#s-role{
+  background:radial-gradient(ellipse 80% 80% at 50% 40%, #1e0c02 0%, #0e0500 100%);
+}
+.hero-accordion{
+  font-size:5rem;line-height:1;margin-bottom:2px;
+  filter:drop-shadow(0 4px 20px rgba(200,140,40,.4));
+  animation:float 3s ease-in-out infinite;
+}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.hero-title{
+  font-size:2.6rem;font-weight:900;color:var(--gold-lt);
+  letter-spacing:.05em;margin-bottom:4px;
+  text-shadow:0 2px 20px rgba(240,192,80,.3);
+}
+.hero-sub{
+  font-size:.7rem;color:var(--text-dim);text-transform:uppercase;
+  letter-spacing:.3em;margin-bottom:44px;
+  font-family:'DM Mono',monospace;
+}
+.role-card{
+  width:100%;max-width:320px;margin:7px 0;
+  padding:18px 20px;
+  background:linear-gradient(135deg,var(--couro) 0%, var(--bg2) 100%);
+  border:1.5px solid #5a3010;border-radius:18px;
+  color:var(--text);cursor:pointer;
+  display:flex;align-items:center;gap:16px;
+  transition:transform .12s,border-color .12s,box-shadow .12s;
+  box-shadow:0 4px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,200,80,.06);
+}
+.role-card:active{transform:scale(.96);box-shadow:0 2px 8px rgba(0,0,0,.5);}
+.role-card:hover{border-color:var(--gold-dim);box-shadow:0 4px 24px rgba(200,140,40,.15),inset 0 1px 0 rgba(255,200,80,.08);}
+.rc-icon{font-size:2.4rem;flex-shrink:0;}
+.rc-text b{display:block;font-size:1.05rem;font-weight:700;color:var(--gold-lt);}
+.rc-text small{font-size:.72rem;color:var(--text-dim);font-family:'DM Mono',monospace;}
+
+/* ── CONNECT SCREENS ──────────────────────────────────────────────── */
+#s-rconn,#s-lconn{
+  background:radial-gradient(ellipse 80% 80% at 50% 30%, #1a0c03 0%, #0e0500 100%);
+  gap:0;
+}
+.conn-badge{
+  font-size:.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.25em;
+  font-family:'DM Mono',monospace;margin-bottom:12px;
+  padding:4px 14px;border:1px solid var(--text-ghost);border-radius:20px;
+}
+.conn-title{
+  font-size:1.7rem;font-weight:700;color:var(--gold-lt);margin-bottom:6px;
+  text-align:center;
+}
+.conn-info{
+  font-size:.8rem;color:var(--text-dim);text-align:center;
+  max-width:260px;margin-bottom:26px;line-height:1.5;
+  font-family:'DM Mono',monospace;
+}
+
+.big-code{
+  background:var(--bg2);border:2px solid #6a3808;border-radius:16px;
+  padding:18px 32px;
+  font-size:3rem;font-weight:500;letter-spacing:.55em;
+  color:var(--gold-lt);font-family:'DM Mono',monospace;
+  margin-bottom:10px;
+  box-shadow:0 0 30px rgba(200,140,40,.1),inset 0 2px 0 rgba(255,200,80,.05);
+}
+.copy-btn{
+  background:transparent;border:1.5px solid #502808;border-radius:10px;
+  color:var(--text-dim);padding:7px 18px;
+  font-family:'DM Mono',monospace;font-size:.78rem;cursor:pointer;
+  margin-bottom:24px;transition:all .12s;
+}
+.copy-btn:active{background:var(--couro);color:var(--gold-lt);}
+
+.waiting-row{
+  display:flex;align-items:center;gap:10px;
+  color:var(--text-ghost);font-size:.78rem;
+  font-family:'DM Mono',monospace;margin-bottom:20px;
+}
+.spin{
+  width:20px;height:20px;flex-shrink:0;
+  border:2.5px solid #3a1800;border-top-color:var(--gold);
+  border-radius:50%;animation:sp .7s linear infinite;
+}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.code-in{
+  width:175px;padding:14px;text-align:center;
+  font-size:2rem;letter-spacing:.4em;
+  font-family:'DM Mono',monospace;font-weight:500;
+  background:var(--bg2);border:2px solid #6a3808;border-radius:12px;
+  color:var(--gold-lt);margin-bottom:16px;outline:none;
+  transition:border-color .2s;
+}
+.code-in:focus{border-color:var(--gold);}
+.err{
+  color:#ff5030;font-size:.75rem;margin-top:6px;display:none;
+  font-family:'DM Mono',monospace;text-align:center;
+}
+
+.btn{
+  width:100%;max-width:260px;margin:5px 0;padding:14px 20px;
+  border-radius:12px;font-family:inherit;font-size:.95rem;cursor:pointer;
+  text-align:center;transition:transform .1s,opacity .1s;
+}
+.btn:active{transform:scale(.96);opacity:.8;}
+.btn-pri{
+  background:linear-gradient(135deg,#7a3800,#4a2000);
+  border:2px solid #b05800;color:#ffe090;font-weight:700;font-size:1rem;
+  box-shadow:0 4px 16px rgba(180,100,20,.25);
+}
+.btn-ghost{background:transparent;border:1.5px solid #3a1e08;color:var(--text-ghost);}
+
+/* ── STATUS BAR ───────────────────────────────────────────────────── */
+.sbar{
+  position:fixed;top:0;left:0;right:0;height:40px;
+  background:rgba(10,4,0,.85);backdrop-filter:blur(8px);
+  display:flex;align-items:center;padding:0 10px;gap:8px;
+  font-size:.72rem;color:var(--text-ghost);
+  font-family:'DM Mono',monospace;z-index:50;
+  border-bottom:1px solid #2a1000;
+}
+.dot{
+  width:8px;height:8px;border-radius:50%;background:var(--red);
+  flex-shrink:0;transition:background .3s;
+  box-shadow:0 0 6px var(--red);
+}
+.dot.on{background:var(--green);box-shadow:0 0 6px var(--green);}
+.sbar-back{
+  background:none;border:none;color:var(--text-ghost);
+  font-size:1rem;cursor:pointer;padding:4px 8px;
+  font-family:inherit;line-height:1;transition:color .15s;
+}
+.sbar-back:active{color:var(--gold);}
+.sbar-role{
+  margin-left:auto;font-size:.68rem;color:var(--text-ghost);letter-spacing:.05em;
+}
+
+/* ── RIGHT PLAY — PIANO ───────────────────────────────────────────── */
+#s-rplay{justify-content:flex-end;padding:0;padding-top:40px;background:#0a0400;}
+
+.hint-overlay{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);
+  text-align:center;pointer-events:none;
+  animation:fadein .5s ease;
+}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.hint-icon{font-size:3rem;margin-bottom:8px;opacity:.25;}
+.hint-txt{font-size:.78rem;color:var(--text-ghost);opacity:.6;font-family:'DM Mono',monospace;}
+
+.piano-shell{
+  width:100%;
+  background:linear-gradient(180deg,#0a0400 0%,#080300 100%);
+  padding:12px 0 0;
+  border-top:2px solid #2a1200;
+}
+.piano{position:relative;width:100%;height:155px;overflow:visible;}
+
+/* White keys */
+.kw{
+  position:absolute;top:0;
+  background:linear-gradient(180deg,#fff8e8 0%,#f0d890 60%,#e0c060 100%);
+  border:1.5px solid #9a5810;
+  border-bottom-left-radius:6px;border-bottom-right-radius:6px;
+  height:140px;z-index:1;cursor:pointer;
+  display:flex;align-items:flex-end;justify-content:center;
+  padding-bottom:4px;font-size:7px;font-weight:700;
+  color:#7a4a08;font-family:'DM Mono',monospace;
+  transition:background .04s;
+  box-shadow:0 4px 8px rgba(0,0,0,.4),inset 0 -2px 0 rgba(0,0,0,.15);
+}
+.kw.pr{
+  background:linear-gradient(180deg,#d86010 0%,#a04008 100%);
+  color:#fff8d0;box-shadow:inset 0 3px 6px rgba(0,0,0,.4);
+}
+/* Black keys */
+.kb{
+  position:absolute;top:0;
+  background:linear-gradient(180deg,#1a0a00 0%,#0e0600 70%,#1a0a04 100%);
+  border:1.5px solid #4a2008;
+  border-bottom-left-radius:4px;border-bottom-right-radius:4px;
+  height:88px;z-index:2;cursor:pointer;
+  transition:background .04s;
+  box-shadow:0 6px 12px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,150,50,.08);
+}
+.kb.pr{
+  background:linear-gradient(180deg,#b04808 0%,#783008 100%);
+  box-shadow:inset 0 3px 6px rgba(0,0,0,.5);
+}
+
+/* ── LEFT PLAY — BASS ─────────────────────────────────────────────── */
+#s-lplay{
+  justify-content:flex-start;padding:48px 16px 12px;gap:14px;
+  background:radial-gradient(ellipse 100% 80% at 50% 0%,#1a0c02 0%,#0e0500 100%);
+}
+.bsec{width:100%;}
+.blbl{
+  font-size:.62rem;color:var(--text-ghost);text-transform:uppercase;
+  letter-spacing:.18em;margin-bottom:8px;
+  font-family:'DM Mono',monospace;
+  padding-left:2px;
+}
+.brow{display:flex;flex-wrap:wrap;gap:8px;}
+
+/* Bass buttons - shared */
+.bb{
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:'Playfair Display',serif;font-weight:700;cursor:pointer;
+  flex-shrink:0;line-height:1;
+  transition:transform .06s,box-shadow .06s;
+  position:relative;overflow:hidden;
+}
+.bb::after{
+  content:'';position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle at 30% 25%,rgba(255,220,100,.12) 0%,transparent 60%);
+  pointer-events:none;
+}
+.bb:active{transform:scale(.9);}
+
+/* Bass note buttons */
+.bt{
+  width:62px;height:62px;font-size:.95rem;
+  background:radial-gradient(circle at 40% 35%,#4e2a08 0%,#1e0c02 100%);
+  border:2px solid #7a4010;color:var(--gold-lt);
+  box-shadow:0 4px 12px rgba(0,0,0,.6),0 0 0 1px #3a1808,inset 0 1px 0 rgba(255,180,60,.1);
+}
+.bt.pr{
+  background:radial-gradient(circle at 40% 35%,#c05010 0%,#802808 100%);
+  border-color:#f0800a;color:#fff;
+  box-shadow:0 2px 8px rgba(200,80,10,.5),0 0 12px rgba(240,128,10,.3);
+}
+
+/* Major chord buttons */
+.bM{
+  width:56px;height:56px;font-size:.85rem;
+  background:radial-gradient(circle at 40% 35%,#083a18 0%,#021808 100%);
+  border:2px solid #0a7038;color:#60e098;
+  box-shadow:0 4px 12px rgba(0,0,0,.6),0 0 0 1px #041c08,inset 0 1px 0 rgba(80,220,120,.1);
+}
+.bM.pr{
+  background:radial-gradient(circle at 40% 35%,#00a050 0%,#006030 100%);
+  border-color:#30f080;color:#fff;
+  box-shadow:0 2px 8px rgba(0,180,80,.5),0 0 12px rgba(50,240,128,.3);
+}
+
+/* Minor chord buttons */
+.bm{
+  width:50px;height:50px;font-size:.78rem;
+  background:radial-gradient(circle at 40% 35%,#20083a 0%,#0c0220 100%);
+  border:2px solid #500890;color:#a870e0;
+  box-shadow:0 4px 12px rgba(0,0,0,.6),0 0 0 1px #200440,inset 0 1px 0 rgba(180,100,240,.1);
+}
+.bm.pr{
+  background:radial-gradient(circle at 40% 35%,#6020b0 0%,#400080 100%);
+  border-color:#c040ff;color:#fff;
+  box-shadow:0 2px 8px rgba(120,20,220,.5),0 0 12px rgba(200,60,255,.3);
+}
+</style>
+</head>
+<body>
+
+<!-- ══ SCREEN: ROLE SELECTION ══════════════════════════════════════ -->
+<div id="s-role" class="screen active">
+  <div class="hero-accordion">🪗</div>
+  <div class="hero-title">Sanfona</div>
+  <div class="hero-sub">Forró Digital · MVP</div>
+
+  <button class="role-card" id="btn-r">
+    <span class="rc-icon">🎹</span>
+    <span class="rc-text">
+      <b>Mão Direita</b>
+      <small>Teclado cromático · 2 oitavas</small>
+    </span>
+  </button>
+
+  <button class="role-card" id="btn-l">
+    <span class="rc-icon">🫲</span>
+    <span class="rc-text">
+      <b>Mão Esquerda</b>
+      <small>Baixos + acordes maiores e menores</small>
+    </span>
+  </button>
+</div>
+
+<!-- ══ SCREEN: RIGHT — CONNECT ══════════════════════════════════════ -->
+<div id="s-rconn" class="screen">
+  <div class="conn-badge">🎹 Mão Direita</div>
+  <div class="conn-title">Código da Sala</div>
+  <div class="conn-info">Passe este código para o celular da mão esquerda</div>
+  <div class="big-code" id="code-show">----</div>
+  <button class="copy-btn" id="btn-copy">📋 Copiar código</button>
+  <div class="waiting-row"><div class="spin"></div><span>Aguardando conexão da mão esquerda...</span></div>
+  <button class="btn btn-ghost" id="btn-solo" style="max-width:240px">Tocar solo (sem par)</button>
+  <button class="btn btn-ghost" id="btn-back-r" style="max-width:240px;margin-top:4px">← Voltar</button>
+</div>
+
+<!-- ══ SCREEN: LEFT — CONNECT ═══════════════════════════════════════ -->
+<div id="s-lconn" class="screen">
+  <div class="conn-badge">🫲 Mão Esquerda</div>
+  <div class="conn-title">Entrar na Sala</div>
+  <div class="conn-info">Digite o código exibido no celular da mão direita</div>
+  <input class="code-in" id="code-in" type="tel" maxlength="4" placeholder="0000" autocomplete="off">
+  <button class="btn btn-pri" id="btn-join" style="max-width:240px">Conectar</button>
+  <div class="err" id="err">❌ Código inválido ou falha na conexão</div>
+  <button class="btn btn-ghost" id="btn-back-l" style="max-width:240px;margin-top:12px">← Voltar</button>
+</div>
+
+<!-- ══ SCREEN: RIGHT — PLAY (PIANO) ════════════════════════════════ -->
+<div id="s-rplay" class="screen">
+  <div class="sbar">
+    <button class="sbar-back" id="back-rplay">←</button>
+    <div class="dot" id="dot-r"></div>
+    <span id="txt-r">Solo</span>
+    <span class="sbar-role">🎹 Melodia</span>
+  </div>
+  <div class="hint-overlay" id="hint-r">
+    <div class="hint-icon">🎹</div>
+    <div class="hint-txt">toque nas teclas</div>
+  </div>
+  <div class="piano-shell">
+    <div class="piano" id="piano"></div>
+  </div>
+</div>
+
+<!-- ══ SCREEN: LEFT — PLAY (BASS) ══════════════════════════════════ -->
+<div id="s-lplay" class="screen">
+  <div class="sbar">
+    <button class="sbar-back" id="back-lplay">←</button>
+    <div class="dot on" id="dot-l"></div>
+    <span id="txt-l">Conectado</span>
+    <span class="sbar-role">🫲 Baixos</span>
+  </div>
+
+  <div class="bsec">
+    <div class="blbl">Nota do Baixo</div>
+    <div class="brow" id="r-bass"></div>
+  </div>
+  <div class="bsec">
+    <div class="blbl">Acorde Maior</div>
+    <div class="brow" id="r-maj"></div>
+  </div>
+  <div class="bsec">
+    <div class="blbl">Acorde Menor</div>
+    <div class="brow" id="r-min"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// ÁUDIO — síntese de acordeon via Web Audio API
+// ══════════════════════════════════════════════════════════════════
+let AC = null;
+const ND = {};
+
+function getAC() {
+  if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+
+// Converte nome de nota (ex: 'C#4') para frequência em Hz
+function toHz(note) {
+  const M = { C:0,'C#':1,Db:1,D:2,'D#':3,Eb:3,E:4,F:5,'F#':6,Gb:6,G:7,'G#':8,Ab:8,A:9,'A#':10,Bb:10,B:11 };
+  const r = note.match(/^([A-G][#b]?)(\d+)$/);
+  if (!r) return 440;
+  return 440 * Math.pow(2, ((+r[2] + 1) * 12 + M[r[1]] - 69) / 12);
+}
+
+function noteOn(id, hz) {
+  if (ND[id]) return;
+  const a = getAC();
+
+  // Master gain
+  const mg = a.createGain();
+  mg.gain.setValueAtTime(0, a.currentTime);
+  mg.gain.linearRampToValueAtTime(0.16, a.currentTime + 0.022);
+
+  // Filtro passa-baixa pra timbre mais quente
+  const lp = a.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 2800;
+  lp.Q.value = 0.4;
+  lp.connect(mg);
+  mg.connect(a.destination);
+
+  // Dois osciladores ligeiramente desafinados = caráter de sanfona (duas palhetas)
+  const os = [
+    [hz,       0.55, 'sawtooth'],
+    [hz*1.004, 0.32, 'sawtooth'],
+    [hz*2,     0.08, 'sawtooth'],  // 2nd harmonic
+    [hz*0.5,   0.05, 'sine'],      // sub fundamental
+  ].map(([f, g, t]) => {
+    const o = a.createOscillator(), gn = a.createGain();
+    o.type = t; o.frequency.value = f; gn.gain.value = g;
+    o.connect(gn); gn.connect(lp); o.start();
+    return o;
+  });
+
+  ND[id] = { os, mg };
+}
+
+function noteOff(id) {
+  const n = ND[id];
+  if (!n) return;
+  delete ND[id];
+  const a = getAC();
+  n.mg.gain.linearRampToValueAtTime(0, a.currentTime + 0.09);
+  setTimeout(() => n.os.forEach(o => { try { o.stop(); } catch(e) {} }), 130);
+}
+
+function allOff() {
+  Object.keys(ND).forEach(noteOff);
+}
+
+
+// ══════════════════════════════════════════════════════════════════
+// PIANO — construção e touch
+// ══════════════════════════════════════════════════════════════════
+const PIANO_KEYS = [
+  {n:'C4',w:1},{n:'C#4',w:0},{n:'D4',w:1},{n:'D#4',w:0},{n:'E4',w:1},
+  {n:'F4',w:1},{n:'F#4',w:0},{n:'G4',w:1},{n:'G#4',w:0},{n:'A4',w:1},{n:'A#4',w:0},{n:'B4',w:1},
+  {n:'C5',w:1},{n:'C#5',w:0},{n:'D5',w:1},{n:'D#5',w:0},{n:'E5',w:1},
+  {n:'F5',w:1},{n:'F#5',w:0},{n:'G5',w:1},{n:'G#5',w:0},{n:'A5',w:1},{n:'A#5',w:0},{n:'B5',w:1},
+  {n:'C6',w:1}
+];
+const BK_PARENT = {'C#':'C','Db':'C','D#':'D','Eb':'D','F#':'F','Gb':'F','G#':'G','Ab':'G','A#':'A','Bb':'A'};
+
+function buildPiano() {
+  const piano = document.getElementById('piano');
+  piano.innerHTML = '';
+  const whites = PIANO_KEYS.filter(k => k.w);
+  const WP = 100 / whites.length;  // % por tecla branca
+  const BP = WP * 0.62;            // % de largura da tecla preta
+
+  // Mapa: nome de nota → índice branco
+  const wiMap = {};
+  whites.forEach((k, i) => wiMap[k.n] = i);
+
+  PIANO_KEYS.forEach(k => {
+    const el = document.createElement('div');
+    el.dataset.n = k.n;
+
+    if (k.w) {
+      el.className = 'kw';
+      el.style.left = (wiMap[k.n] * WP) + '%';
+      el.style.width = (WP - 0.2) + '%';
+      const nm = k.n.replace(/\d/, '');
+      el.textContent = nm === 'C' ? k.n : nm;  // mostra oitava só no C
+    } else {
+      el.className = 'kb';
+      const m = k.n.match(/^([A-G][#b]?)(\d+)$/);
+      const pNote = BK_PARENT[m[1]] + m[2];
+      const pIdx = wiMap[pNote];
+      el.style.left = ((pIdx + 1) * WP - BP / 2) + '%';
+      el.style.width = BP + '%';
+    }
+    piano.appendChild(el);
+  });
+}
+
+function setupPianoTouch() {
+  const piano = document.getElementById('piano');
+  const tmap = {};  // touchId → note name
+
+  function keyAt(x, y) {
+    // elementsFromPoint retorna do topo pra baixo — pega a tecla antes de qualquer outro elemento
+    const els = document.elementsFromPoint(x, y);
+    for (const el of els) if (el.dataset && el.dataset.n) return el;
+    return null;
+  }
+
+  function press(tid, el) {
+    if (!el) return;
+    const n = el.dataset.n;
+    if (tmap[tid] === n) return;
+    release(tid);
+    tmap[tid] = n;
+    el.classList.add('pr');
+    const hz = toHz(n);
+    noteOn('l_' + n, hz);
+    send('on', { id: n, hz });
+    document.getElementById('hint-r').style.display = 'none';
+  }
+
+  function release(tid) {
+    const n = tmap[tid];
+    if (!n) return;
+    delete tmap[tid];
+    const el = piano.querySelector(`[data-n="${n}"]`);
+    if (el) el.classList.remove('pr');
+    noteOff('l_' + n);
+    send('off', { id: n });
+  }
+
+  piano.addEventListener('touchstart', e => {
+    e.preventDefault(); getAC();
+    [...e.changedTouches].forEach(t => press(t.identifier, keyAt(t.clientX, t.clientY)));
+  }, { passive: false });
+
+  piano.addEventListener('touchmove', e => {
+    e.preventDefault();
+    [...e.changedTouches].forEach(t => {
+      const el = keyAt(t.clientX, t.clientY);
+      if (el && el.dataset.n !== tmap[t.identifier]) press(t.identifier, el);
+      else if (!el) release(t.identifier);
+    });
+  }, { passive: false });
+
+  piano.addEventListener('touchend', e => {
+    e.preventDefault();
+    [...e.changedTouches].forEach(t => release(t.identifier));
+  }, { passive: false });
+
+  piano.addEventListener('touchcancel', e => {
+    [...e.changedTouches].forEach(t => release(t.identifier));
+  }, { passive: false });
+
+  // Mouse support (desktop testing)
+  let mouseDown = false;
+  piano.addEventListener('mousedown', e => {
+    getAC(); mouseDown = true;
+    press('mouse', e.target.dataset.n ? e.target : null);
+  });
+  piano.addEventListener('mouseover', e => {
+    if (mouseDown) press('mouse', e.target.dataset.n ? e.target : null);
+  });
+  document.addEventListener('mouseup', () => {
+    if (mouseDown) { mouseDown = false; release('mouse'); }
+  });
+}
+
+
+// ══════════════════════════════════════════════════════════════════
+// BAIXOS — construção e touch
+// ══════════════════════════════════════════════════════════════════
+const BASS = [
+  {l:'G',  ns:['G2']}, {l:'C',  ns:['C3']}, {l:'D', ns:['D2']},  {l:'A',  ns:['A2']},
+  {l:'E',  ns:['E2']}, {l:'B',  ns:['B2']}, {l:'F', ns:['F2']},  {l:'Bb', ns:['Bb2']},
+];
+const MAJOR = [
+  {l:'G',  ns:['G2','B2','D3']},  {l:'C',  ns:['C3','E3','G3']},
+  {l:'D',  ns:['D3','F#3','A3']}, {l:'A',  ns:['A2','C#3','E3']},
+  {l:'E',  ns:['E2','G#2','B2']}, {l:'B',  ns:['B2','D#3','F#3']},
+  {l:'F',  ns:['F2','A2','C3']},  {l:'Bb', ns:['Bb2','D3','F3']},
+];
+const MINOR = [
+  {l:'Gm',  ns:['G2','Bb2','D3']},  {l:'Cm',  ns:['C3','Eb3','G3']},
+  {l:'Dm',  ns:['D3','F3','A3']},   {l:'Am',  ns:['A2','C3','E3']},
+  {l:'Em',  ns:['E2','G2','B2']},   {l:'Bm',  ns:['B2','D3','F#3']},
+  {l:'Fm',  ns:['F2','Ab2','C3']},  {l:'Bbm', ns:['Bb2','Db3','F3']},
+];
+
+function buildBass() {
+  fillRow('r-bass', BASS,  'bt');
+  fillRow('r-maj',  MAJOR, 'bM');
+  fillRow('r-min',  MINOR, 'bm');
+}
+
+function fillRow(rowId, data, cls) {
+  const row = document.getElementById(rowId);
+  row.innerHTML = '';
+  data.forEach(item => {
+    const btn = document.createElement('button');
+    btn.className = 'bb ' + cls;
+    btn.textContent = item.l;
+    btn.dataset.bid = rowId + '_' + item.l;
+    btn.dataset.ns  = JSON.stringify(item.ns);
+    row.appendChild(btn);
+  });
+}
+
+function setupBassTouch() {
+  const scr = document.getElementById('s-lplay');
+  const tmap = {};  // touchId → {bid, ns, el}
+
+  function btnAt(x, y) {
+    const el = document.elementFromPoint(x, y);
+    return el && el.classList.contains('bb') ? el : null;
+  }
+
+  function pressC(tid, el) {
+    if (!el) return;
+    const bid = el.dataset.bid;
+    if (tmap[tid] && tmap[tid].bid === bid) return;
+    releaseC(tid);
+    const ns = JSON.parse(el.dataset.ns);
+    tmap[tid] = { bid, ns, el };
+    el.classList.add('pr');
+    ns.forEach((n, i) => {
+      const id = bid + '_' + i, hz = toHz(n);
+      noteOn('l_' + id, hz);
+      send('on', { id, hz });
+    });
+  }
+
+  function releaseC(tid) {
+    const e = tmap[tid];
+    if (!e) return;
+    delete tmap[tid];
+    e.el.classList.remove('pr');
+    e.ns.forEach((_, i) => {
+      const id = e.bid + '_' + i;
+      noteOff('l_' + id);
+      send('off', { id });
+    });
+  }
+
+  scr.addEventListener('touchstart', e => {
+    e.preventDefault(); getAC();
+    [...e.changedTouches].forEach(t => pressC(t.identifier, btnAt(t.clientX, t.clientY)));
+  }, { passive: false });
+
+  scr.addEventListener('touchend', e => {
+    e.preventDefault();
+    [...e.changedTouches].forEach(t => releaseC(t.identifier));
+  }, { passive: false });
+
+  scr.addEventListener('touchcancel', e => {
+    [...e.changedTouches].forEach(t => releaseC(t.identifier));
+  }, { passive: false });
+
+  // Mouse support
+  let mdown = false;
+  scr.addEventListener('mousedown', e => {
+    getAC(); mdown = true;
+    pressC('mouse', btnAt(e.clientX, e.clientY));
+  });
+  document.addEventListener('mouseup', () => {
+    if (mdown) { mdown = false; releaseC('mouse'); }
+  });
+}
+
+
+// ══════════════════════════════════════════════════════════════════
+// PEER — WebRTC via PeerJS
+// ══════════════════════════════════════════════════════════════════
+let peer = null, conn = null;
+
+function mkCode() {
+  return 'sf' + Math.floor(1000 + Math.random() * 9000);
+}
+
+function send(type, data) {
+  if (conn && conn.open) try { conn.send({ type, ...data }); } catch(e) {}
+}
+
+function onRemote(msg) {
+  if (msg.type === 'on')  noteOn('r_' + msg.id, msg.hz);
+  if (msg.type === 'off') noteOff('r_' + msg.id);
+}
+
+function setStatus(side, on, txt) {
+  document.getElementById('dot-' + side).classList.toggle('on', on);
+  document.getElementById('txt-' + side).textContent = txt;
+}
+
+function destroyPeer() {
+  allOff();
+  if (peer) { try { peer.destroy(); } catch(e) {} peer = null; }
+  conn = null;
+}
+
+
+// ══════════════════════════════════════════════════════════════════
+// NAVEGAÇÃO
+// ══════════════════════════════════════════════════════════════════
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── Mão Direita: gera código, aguarda conexão
+document.getElementById('btn-r').addEventListener('click', () => {
+  destroyPeer();
+  const code = mkCode();
+  document.getElementById('code-show').textContent = code.slice(2);  // só os 4 dígitos
+  show('s-rconn');
+
+  peer = new Peer(code, { debug: 0 });
+
+  peer.on('connection', c => {
+    conn = c;
+    c.on('open', () => {
+      setStatus('r', true, 'Conectado');
+      show('s-rplay');
+    });
+    c.on('data', onRemote);
+    c.on('close', () => { setStatus('r', false, 'Desconectado'); allOff(); });
+    c.on('error', () => { setStatus('r', false, 'Erro'); allOff(); });
+  });
+
+  peer.on('error', err => console.warn('PeerJS:', err));
+});
+
+// ── Mão Esquerda: digita código e conecta
+document.getElementById('btn-l').addEventListener('click', () => show('s-lconn'));
+
+document.getElementById('btn-join').addEventListener('click', () => {
+  const d = document.getElementById('code-in').value.trim();
+  if (d.length !== 4 || isNaN(+d)) {
+    document.getElementById('err').style.display = 'block';
+    return;
+  }
+  document.getElementById('err').style.display = 'none';
+  const btn = document.getElementById('btn-join');
+  btn.textContent = 'Conectando...'; btn.disabled = true;
+
+  destroyPeer();
+  peer = new Peer(undefined, { debug: 0 });
+
+  peer.on('open', () => {
+    conn = peer.connect('sf' + d, { reliable: true });
+    conn.on('open', () => {
+      setStatus('l', true, 'Conectado');
+      show('s-lplay');
+    });
+    conn.on('data', onRemote);
+    conn.on('close', () => { setStatus('l', false, 'Desconectado'); allOff(); });
+    conn.on('error', () => {
+      document.getElementById('err').style.display = 'block';
+      btn.textContent = 'Conectar'; btn.disabled = false;
+    });
+    // Timeout: 9s sem conexão
+    setTimeout(() => {
+      if (conn && !conn.open) {
+        document.getElementById('err').style.display = 'block';
+        btn.textContent = 'Conectar'; btn.disabled = false;
+      }
+    }, 9000);
+  });
+
+  peer.on('error', () => {
+    document.getElementById('err').style.display = 'block';
+    btn.textContent = 'Conectar'; btn.disabled = false;
+  });
+});
+
+document.getElementById('code-in').addEventListener('keyup', e => {
+  if (e.key === 'Enter') document.getElementById('btn-join').click();
+});
+
+// ── Copiar código
+document.getElementById('btn-copy').addEventListener('click', () => {
+  const c = document.getElementById('code-show').textContent;
+  try { navigator.clipboard.writeText(c); } catch(e) {}
+  const b = document.getElementById('btn-copy');
+  b.textContent = '✅ Copiado!';
+  setTimeout(() => b.textContent = '📋 Copiar código', 2000);
+});
+
+// ── Modo solo
+document.getElementById('btn-solo').addEventListener('click', () => {
+  setStatus('r', false, 'Solo');
+  show('s-rplay');
+});
+
+// ── Botões de voltar
+document.getElementById('btn-back-r').addEventListener('click', () => {
+  destroyPeer(); show('s-role');
+});
+document.getElementById('btn-back-l').addEventListener('click', () => show('s-role'));
+
+document.getElementById('back-rplay').addEventListener('click', () => {
+  destroyPeer(); show('s-role');
+});
+document.getElementById('back-lplay').addEventListener('click', () => {
+  destroyPeer(); show('s-role');
+});
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+buildPiano();
+buildBass();
+setupPianoTouch();
+setupBassTouch();
+</script>
+</body>
+</html>
