@@ -28,26 +28,40 @@ body::before{
   --text:#e8c870;--text-dim:#8a6030;--text-ghost:#4a3018;
 }
 
-/* ── ADIÇÃO 1/3: CSS de rotação ─────────────────────────────────── */
-/* CSS fallback para quando Screen Orientation API não disponível    */
-body.rot-land{overflow:hidden;}
-body.rot-land #rot-wrap{
-  position:fixed;
-  width:100vh;
-  height:100vw;
-  top:calc((100vh - 100vw) / 2);
-  left:calc((100vw - 100vh) / 2);
-  transform:rotate(90deg);
-  transform-origin:center center;
+/*
+ * ROTAÇÃO — aplicada no <body> diretamente.
+ * Motivo: position:fixed só respeita transform quando o elemento
+ * transformado é o próprio <body>. Wrappers intermediários não funcionam.
+ */
+body.rot-land {
+  width: 100vh;
+  height: 100vw;
+  position: fixed;
+  top: calc((100vh - 100vw) / 2);
+  left: calc((100vw - 100vh) / 2);
+  transform: rotate(90deg);
+  transform-origin: center center;
+  overflow: hidden;
 }
-.rot-btn{
-  background:none;border:1.5px solid #3a1e08;color:var(--text-ghost);
-  font-size:.78rem;cursor:pointer;padding:2px 7px;border-radius:7px;
-  font-family:'DM Mono',monospace;line-height:1.4;flex-shrink:0;
-  transition:color .15s,border-color .15s,background .15s;
+
+.rot-btn {
+  background: none;
+  border: 1.5px solid #3a1e08;
+  color: var(--text-ghost);
+  font-size: .75rem;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 7px;
+  font-family: 'DM Mono', monospace;
+  line-height: 1.5;
+  flex-shrink: 0;
+  transition: color .15s, border-color .15s, background .15s;
 }
-.rot-btn.on{color:var(--gold-lt);border-color:var(--gold-dim);background:rgba(200,140,40,.12);}
-/* ── fim adição 1/3 ─────────────────────────────────────────────── */
+.rot-btn.on {
+  color: var(--gold-lt);
+  border-color: var(--gold-dim);
+  background: rgba(200,140,40,.12);
+}
 
 .screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;}
 .screen.active{display:flex;}
@@ -142,9 +156,6 @@ body.rot-land #rot-wrap{
 </head>
 <body>
 
-<!-- ADIÇÃO 2/3: wrapper para CSS rotation fallback -->
-<div id="rot-wrap">
-
 <!-- ══ ROLE SELECTION ══════════════════════════════════════════════ -->
 <div id="s-role" class="screen active">
   <div class="hero-accordion">🪗</div>
@@ -187,7 +198,9 @@ body.rot-land #rot-wrap{
   <input class="code-in" id="code-in" type="tel" maxlength="4" placeholder="0000" autocomplete="off">
   <button class="btn btn-pri" id="btn-join" style="max-width:240px">Conectar</button>
   <div class="err" id="err">❌ Código inválido ou falha na conexão</div>
-  <button class="btn btn-ghost" id="btn-back-l" style="max-width:240px;margin-top:12px">← Voltar</button>
+  <!-- NOVO: botão solo mão esquerda -->
+  <button class="btn btn-ghost" id="btn-solo-l" style="max-width:240px;margin-top:8px">Tocar solo (sem par)</button>
+  <button class="btn btn-ghost" id="btn-back-l" style="max-width:240px;margin-top:4px">← Voltar</button>
 </div>
 
 <!-- ══ RIGHT — PLAY (PIANO) ════════════════════════════════════════ -->
@@ -196,7 +209,6 @@ body.rot-land #rot-wrap{
     <button class="sbar-back" id="back-rplay">←</button>
     <div class="dot" id="dot-r"></div>
     <span id="txt-r">Solo</span>
-    <!-- ADIÇÃO: botão rotação — inicia .on porque mão direita prefere paisagem -->
     <button class="rot-btn on" id="rot-r" onclick="toggleRot()">⟳ paisagem</button>
     <span class="sbar-role">🎹 Melodia</span>
   </div>
@@ -215,7 +227,6 @@ body.rot-land #rot-wrap{
     <button class="sbar-back" id="back-lplay">←</button>
     <div class="dot on" id="dot-l"></div>
     <span id="txt-l">Conectado</span>
-    <!-- ADIÇÃO: botão rotação -->
     <button class="rot-btn" id="rot-l" onclick="toggleRot()">⟳ paisagem</button>
     <span class="sbar-role">🫲 Baixos</span>
   </div>
@@ -228,7 +239,6 @@ body.rot-land #rot-wrap{
 <div id="s-single" class="screen">
   <div class="sbar">
     <button class="sbar-back" id="back-single">←</button>
-    <!-- ADIÇÃO: botão rotação -->
     <button class="rot-btn" id="rot-s" onclick="toggleRot()">⟳ paisagem</button>
     <span class="sbar-role" style="margin-left:4px">🪗 Tela Única</span>
   </div>
@@ -246,19 +256,16 @@ body.rot-land #rot-wrap{
   </div>
 </div>
 
-</div><!-- /rot-wrap -->
-
 <script>
 // ══════════════════════════════════════════════════════════════════
-// ADIÇÃO 3/3: lógica de rotação
-// ── Screen Orientation API (Android Chrome / PWA instalado)
-// ── CSS fallback via body.rot-land (iOS Safari e navegadores comuns)
+// ROTAÇÃO
+// Aplica transform no <body> diretamente.
+// position:fixed filhos só ficam contidos quando é o body transformado.
 // ══════════════════════════════════════════════════════════════════
 let _rotOn = false;
 
 function _applyRot(on) {
   _rotOn = on;
-  // Atualiza visual de todos os botões
   ['rot-r','rot-l','rot-s'].forEach(id => {
     const b = document.getElementById(id);
     if (!b) return;
@@ -268,14 +275,10 @@ function _applyRot(on) {
 }
 
 function _lockLandscape() {
-  // Tenta API nativa primeiro (funciona em Android Chrome e PWA)
   if (screen.orientation && screen.orientation.lock) {
     screen.orientation.lock('landscape').then(() => {
       _applyRot(true);
-    }).catch(() => {
-      // API bloqueada (iOS Safari não-PWA) → CSS fallback
-      _cssFallback(true);
-    });
+    }).catch(() => _cssFallback(true));
   } else {
     _cssFallback(true);
   }
@@ -285,13 +288,14 @@ function _unlockLandscape() {
   if (screen.orientation && screen.orientation.unlock) {
     try { screen.orientation.unlock(); } catch(_) {}
   }
-  _cssFallback(false);
+  document.body.classList.remove('rot-land');
+  _applyRot(false);
 }
 
 function _cssFallback(on) {
-  if (on && window.innerWidth <= window.innerHeight) {
-    document.body.classList.add('rot-land');
-  } else if (!on) {
+  if (on) {
+    if (window.innerWidth <= window.innerHeight) document.body.classList.add('rot-land');
+  } else {
     document.body.classList.remove('rot-land');
   }
   _applyRot(on);
@@ -302,23 +306,16 @@ function toggleRot() {
   else        _lockLandscape();
 }
 
-// Re-sincroniza fallback se usuário girar manualmente
 window.addEventListener('resize', () => {
   if (_rotOn && document.body.classList.contains('rot-land')) {
-    if (window.innerWidth > window.innerHeight) {
-      document.body.classList.remove('rot-land'); // já está em paisagem real
-    } else {
-      document.body.classList.add('rot-land');
-    }
+    if (window.innerWidth > window.innerHeight) document.body.classList.remove('rot-land');
+    else document.body.classList.add('rot-land');
   }
 });
-// ══════════════════════════════════════════════════════════════════
-// FIM adição rotação
-// ══════════════════════════════════════════════════════════════════
 
 
 // ══════════════════════════════════════════════════════════════════
-// ÁUDIO — original, sem alteração de nenhuma linha
+// ÁUDIO — intacto
 // ══════════════════════════════════════════════════════════════════
 let AC = null;
 const ND = {};
@@ -487,7 +484,6 @@ function setupPianoTouch(pianoEl, hintId) {
     [...e.changedTouches].forEach(t => release(t.identifier));
   }, { passive: false });
 
-  // Mouse support
   let mouseDown = false;
   pianoEl.addEventListener('mousedown', e => {
     unlockAC(); mouseDown = true;
@@ -591,7 +587,6 @@ function setupBassTouch(scrEl) {
     [...e.changedTouches].forEach(t => releaseC(t.identifier));
   }, { passive: false });
 
-  // Mouse support
   let mdown = false;
   scrEl.addEventListener('mousedown', e => {
     unlockAC(); mdown = true;
@@ -630,6 +625,7 @@ function destroyPeer() {
   conn = null;
 }
 
+
 // ══════════════════════════════════════════════════════════════════
 // NAVEGAÇÃO
 // ══════════════════════════════════════════════════════════════════
@@ -638,6 +634,7 @@ function show(id) {
   document.getElementById(id).classList.add('active');
 }
 
+// Mão Direita — gera código e aguarda par
 document.getElementById('btn-r').addEventListener('click', () => {
   destroyPeer();
   const code = mkCode();
@@ -654,8 +651,10 @@ document.getElementById('btn-r').addEventListener('click', () => {
   peer.on('error', err => console.warn('PeerJS:', err));
 });
 
+// Mão Esquerda — vai para tela de conexão
 document.getElementById('btn-l').addEventListener('click', () => show('s-lconn'));
 
+// Mão Esquerda — conectar via código
 document.getElementById('btn-join').addEventListener('click', () => {
   const d = document.getElementById('code-in').value.trim();
   if (d.length !== 4 || isNaN(+d)) { document.getElementById('err').style.display = 'block'; return; }
@@ -677,6 +676,13 @@ document.getElementById('btn-join').addEventListener('click', () => {
 
 document.getElementById('code-in').addEventListener('keyup', e => { if (e.key === 'Enter') document.getElementById('btn-join').click(); });
 
+// Mão Esquerda — solo sem par
+document.getElementById('btn-solo-l').addEventListener('click', () => {
+  destroyPeer();
+  setStatus('l', false, 'Solo');
+  show('s-lplay');
+});
+
 document.getElementById('btn-copy').addEventListener('click', () => {
   try { navigator.clipboard.writeText(document.getElementById('code-show').textContent); } catch(e) {}
   const b = document.getElementById('btn-copy');
@@ -684,10 +690,11 @@ document.getElementById('btn-copy').addEventListener('click', () => {
   setTimeout(() => b.textContent = '📋 Copiar código', 2000);
 });
 
+// Mão Direita — solo sem par
 document.getElementById('btn-solo').addEventListener('click', () => {
   setStatus('r', false, 'Solo');
   show('s-rplay');
-  _lockLandscape(); // mão direita prefere paisagem
+  _lockLandscape();
 });
 
 document.getElementById('btn-back-r').addEventListener('click', () => { destroyPeer(); show('s-role'); });
@@ -697,6 +704,7 @@ document.getElementById('back-lplay').addEventListener('click', () => { _unlockL
 
 document.getElementById('btn-single').addEventListener('click', () => { destroyPeer(); show('s-single'); });
 document.getElementById('back-single').addEventListener('click', () => { _unlockLandscape(); destroyPeer(); allOff(); show('s-role'); });
+
 
 // ══════════════════════════════════════════════════════════════════
 // INIT
