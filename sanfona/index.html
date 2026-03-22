@@ -55,6 +55,7 @@ body.rot-land {
   font-family: 'DM Mono', monospace;
   line-height: 1.5;
   flex-shrink: 0;
+  touch-action: manipulation;
   transition: color .15s, border-color .15s, background .15s;
 }
 .rot-btn.on {
@@ -104,10 +105,10 @@ body.rot-land {
 .btn-pri{background:linear-gradient(135deg,#7a3800,#4a2000);border:2px solid #b05800;color:#ffe090;font-weight:700;font-size:1rem;box-shadow:0 4px 16px rgba(180,100,20,.25);}
 .btn-ghost{background:transparent;border:1.5px solid #3a1e08;color:var(--text-ghost);}
 
-.sbar{position:fixed;top:0;left:0;right:0;height:40px;background:rgba(10,4,0,.85);backdrop-filter:blur(8px);display:flex;align-items:center;padding:0 10px;gap:8px;font-size:.72rem;color:var(--text-ghost);font-family:'DM Mono',monospace;z-index:50;border-bottom:1px solid #2a1000;}
+.sbar{position:fixed;top:0;left:0;right:0;height:40px;background:rgba(10,4,0,.85);backdrop-filter:blur(8px);display:flex;align-items:center;padding:0 10px;gap:8px;font-size:.72rem;color:var(--text-ghost);font-family:'DM Mono',monospace;z-index:50;border-bottom:1px solid #2a1000;touch-action:manipulation;}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0;transition:background .3s;box-shadow:0 0 6px var(--red);}
 .dot.on{background:var(--green);box-shadow:0 0 6px var(--green);}
-.sbar-back{background:none;border:none;color:var(--text-ghost);font-size:1rem;cursor:pointer;padding:4px 8px;font-family:inherit;line-height:1;transition:color .15s;}
+.sbar-back{background:none;border:none;color:var(--text-ghost);font-size:1rem;cursor:pointer;padding:4px 8px;font-family:inherit;line-height:1;transition:color .15s;touch-action:manipulation;}
 .sbar-back:active{color:var(--gold);}
 .sbar-role{margin-left:auto;font-size:.68rem;color:var(--text-ghost);letter-spacing:.05em;}
 
@@ -230,9 +231,11 @@ body.rot-land {
     <button class="rot-btn" id="rot-l" onclick="toggleRot()">⟳ paisagem</button>
     <span class="sbar-role">🫲 Baixos</span>
   </div>
-  <div class="bsec"><div class="blbl">Nota do Baixo</div><div class="brow" id="r-bass"></div></div>
-  <div class="bsec"><div class="blbl">Acorde Maior</div><div class="brow" id="r-maj"></div></div>
-  <div class="bsec"><div class="blbl">Acorde Menor</div><div class="brow" id="r-min"></div></div>
+  <div id="lplay-bass-area" style="width:100%;display:flex;flex-direction:column;gap:14px;padding:0 0 12px;">
+    <div class="bsec"><div class="blbl">Nota do Baixo</div><div class="brow" id="r-bass"></div></div>
+    <div class="bsec"><div class="blbl">Acorde Maior</div><div class="brow" id="r-maj"></div></div>
+    <div class="bsec"><div class="blbl">Acorde Menor</div><div class="brow" id="r-min"></div></div>
+  </div>
 </div>
 
 <!-- ══ SINGLE SCREEN ═══════════════════════════════════════════════ -->
@@ -702,6 +705,18 @@ document.getElementById('btn-back-l').addEventListener('click', () => show('s-ro
 document.getElementById('back-rplay').addEventListener('click', () => { _unlockLandscape(); destroyPeer(); show('s-role'); });
 document.getElementById('back-lplay').addEventListener('click', () => { _unlockLandscape(); destroyPeer(); show('s-role'); });
 
+// Handlers touchend explícitos para back-lplay e rot-l:
+// No iOS Safari, e.preventDefault() em touchstart de elementos próximos
+// pode suprimir a geração de eventos click. touchend direto contorna isso.
+document.getElementById('back-lplay').addEventListener('touchend', e => {
+  e.preventDefault();
+  _unlockLandscape(); destroyPeer(); show('s-role');
+}, { passive: false });
+document.getElementById('rot-l').addEventListener('touchend', e => {
+  e.preventDefault();
+  toggleRot();
+}, { passive: false });
+
 document.getElementById('btn-single').addEventListener('click', () => { destroyPeer(); show('s-single'); });
 document.getElementById('back-single').addEventListener('click', () => { _unlockLandscape(); destroyPeer(); allOff(); show('s-role'); });
 
@@ -712,7 +727,7 @@ document.getElementById('back-single').addEventListener('click', () => { _unlock
 buildPiano('piano');
 buildBass('r-');
 setupPianoTouch(document.getElementById('piano'), 'hint-r');
-setupBassTouch(document.getElementById('s-lplay'));
+setupBassTouch(document.getElementById('lplay-bass-area'));
 
 buildPiano('piano-s');
 buildBass('s-r-');
