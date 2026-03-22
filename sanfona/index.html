@@ -28,7 +28,22 @@ body::before{
   --text:#e8c870;--text-dim:#8a6030;--text-ghost:#4a3018;
 }
 
-.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;}
+/* ── ROTATION — CSS fallback para quando o API não está disponível ── */
+/* Envolve todo o conteúdo numa camada que pode ser rotacionada        */
+#rot-wrap{
+  position:fixed;inset:0;
+  transition:transform .3s ease;
+}
+/* Landscape forçado via CSS: rotaciona 90° e troca dimensões */
+body.rot-land #rot-wrap{
+  width:100vh;
+  height:100vw;
+  top:calc((100vh - 100vw) / 2);
+  left:calc((100vw - 100vh) / 2);
+  transform:rotate(90deg);
+}
+
+.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;}
 .screen.active{display:flex;}
 
 #s-role{background:radial-gradient(ellipse 80% 80% at 50% 40%, #1e0c02 0%, #0e0500 100%);}
@@ -69,13 +84,39 @@ body::before{
 .btn-pri{background:linear-gradient(135deg,#7a3800,#4a2000);border:2px solid #b05800;color:#ffe090;font-weight:700;font-size:1rem;box-shadow:0 4px 16px rgba(180,100,20,.25);}
 .btn-ghost{background:transparent;border:1.5px solid #3a1e08;color:var(--text-ghost);}
 
-.sbar{position:fixed;top:0;left:0;right:0;height:40px;background:rgba(10,4,0,.85);backdrop-filter:blur(8px);display:flex;align-items:center;padding:0 10px;gap:8px;font-size:.72rem;color:var(--text-ghost);font-family:'DM Mono',monospace;z-index:50;border-bottom:1px solid #2a1000;}
+/* ── STATUS BAR ───────────────────────────────────────────────────── */
+.sbar{
+  position:absolute;top:0;left:0;right:0;height:40px;
+  background:rgba(10,4,0,.85);backdrop-filter:blur(8px);
+  display:flex;align-items:center;padding:0 10px;gap:8px;
+  font-size:.72rem;color:var(--text-ghost);
+  font-family:'DM Mono',monospace;z-index:50;
+  border-bottom:1px solid #2a1000;
+}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0;transition:background .3s;box-shadow:0 0 6px var(--red);}
 .dot.on{background:var(--green);box-shadow:0 0 6px var(--green);}
 .sbar-back{background:none;border:none;color:var(--text-ghost);font-size:1rem;cursor:pointer;padding:4px 8px;font-family:inherit;line-height:1;transition:color .15s;}
 .sbar-back:active{color:var(--gold);}
 .sbar-role{margin-left:auto;font-size:.68rem;color:var(--text-ghost);letter-spacing:.05em;}
 
+/* ── BOTÃO DE ROTAÇÃO ─────────────────────────────────────────────── */
+.rot-btn{
+  background:none;border:1.5px solid #3a1e08;color:var(--text-ghost);
+  font-size:.9rem;cursor:pointer;
+  padding:3px 8px;border-radius:8px;
+  font-family:'DM Mono',monospace;line-height:1;
+  transition:color .15s,border-color .15s,background .15s;
+  flex-shrink:0;
+}
+.rot-btn:active{color:var(--gold);border-color:var(--gold-dim);}
+/* Ativo = rotação forçada ligada */
+.rot-btn.locked{
+  color:var(--gold-lt);
+  border-color:var(--gold-dim);
+  background:rgba(200,140,40,.12);
+}
+
+/* ── PIANO SCREEN ─────────────────────────────────────────────────── */
 #s-rplay{justify-content:flex-end;padding:0;padding-top:40px;background:#0a0400;}
 .hint-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);text-align:center;pointer-events:none;animation:fadein .5s ease;}
 @keyframes fadein{from{opacity:0}to{opacity:1}}
@@ -97,7 +138,6 @@ body::before{
 .bb{border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:700;cursor:pointer;flex-shrink:0;line-height:1;transition:transform .06s,box-shadow .06s;position:relative;overflow:hidden;}
 .bb::after{content:'';position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 30% 25%,rgba(255,220,100,.12) 0%,transparent 60%);pointer-events:none;}
 .bb:active{transform:scale(.9);}
-
 .bt{width:62px;height:62px;font-size:.95rem;background:radial-gradient(circle at 40% 35%,#4e2a08 0%,#1e0c02 100%);border:2px solid #7a4010;color:var(--gold-lt);box-shadow:0 4px 12px rgba(0,0,0,.6),0 0 0 1px #3a1808,inset 0 1px 0 rgba(255,180,60,.1);}
 .bt.pr{background:radial-gradient(circle at 40% 35%,#c05010 0%,#802808 100%);border-color:#f0800a;color:#fff;box-shadow:0 2px 8px rgba(200,80,10,.5),0 0 12px rgba(240,128,10,.3);}
 .bM{width:56px;height:56px;font-size:.85rem;background:radial-gradient(circle at 40% 35%,#083a18 0%,#021808 100%);border:2px solid #0a7038;color:#60e098;box-shadow:0 4px 12px rgba(0,0,0,.6),0 0 0 1px #041c08,inset 0 1px 0 rgba(80,220,120,.1);}
@@ -112,7 +152,7 @@ body::before{
   padding:48px 16px 12px;
   display:flex;flex-direction:column;gap:14px;
   background:radial-gradient(ellipse 100% 60% at 50% 0%,#1a0c02 0%,#0a0400 100%);
-  touch-action:pan-y;  /* permite scroll vertical sem bloquear o touch do piano abaixo */
+  touch-action:pan-y;
 }
 .single-bass::-webkit-scrollbar{width:3px;}
 .single-bass::-webkit-scrollbar-thumb{background:#3a1800;border-radius:3px;}
@@ -120,6 +160,7 @@ body::before{
 </style>
 </head>
 <body>
+<div id="rot-wrap">
 
 <!-- ══ ROLE SELECTION ══════════════════════════════════════════════ -->
 <div id="s-role" class="screen active">
@@ -172,6 +213,7 @@ body::before{
     <button class="sbar-back" id="back-rplay">←</button>
     <div class="dot" id="dot-r"></div>
     <span id="txt-r">Solo</span>
+    <button class="rot-btn locked" id="rot-btn-r" title="Rotação de tela">⟳ paisagem</button>
     <span class="sbar-role">🎹 Melodia</span>
   </div>
   <div class="hint-overlay" id="hint-r">
@@ -189,6 +231,7 @@ body::before{
     <button class="sbar-back" id="back-lplay">←</button>
     <div class="dot on" id="dot-l"></div>
     <span id="txt-l">Conectado</span>
+    <button class="rot-btn" id="rot-btn-l" title="Rotação de tela">⟳ paisagem</button>
     <span class="sbar-role">🫲 Baixos</span>
   </div>
   <div class="bsec"><div class="blbl">Nota do Baixo</div><div class="brow" id="r-bass"></div></div>
@@ -200,10 +243,10 @@ body::before{
 <div id="s-single" class="screen">
   <div class="sbar">
     <button class="sbar-back" id="back-single">←</button>
+    <button class="rot-btn" id="rot-btn-s" title="Rotação de tela">⟳ paisagem</button>
     <span class="sbar-role" style="margin-left:4px">🪗 Tela Única</span>
   </div>
 
-  <!-- Baixos — área rolável -->
   <div class="single-bass" id="single-bass-area">
     <div class="bsec"><div class="blbl">Nota do Baixo</div><div class="brow" id="s-r-bass"></div></div>
     <div class="bsec"><div class="blbl">Acorde Maior</div><div class="brow" id="s-r-maj"></div></div>
@@ -212,15 +255,94 @@ body::before{
 
   <div class="single-divider"></div>
 
-  <!-- Piano — fixo na parte inferior -->
   <div class="piano-shell" style="flex-shrink:0">
     <div class="piano" id="piano-s"></div>
   </div>
 </div>
 
+</div><!-- #rot-wrap -->
+
 <script>
 // ══════════════════════════════════════════════════════════════════
-// ÁUDIO — código original do usuário, sem modificações
+// ROTAÇÃO DE TELA
+// Tenta Screen Orientation API (Android Chrome, PWA).
+// Se não disponível, usa CSS transform no #rot-wrap como fallback.
+// ══════════════════════════════════════════════════════════════════
+let rotLocked = false;
+
+function isNativeLandscape() {
+  // Retorna true se o dispositivo já está em paisagem real
+  return window.innerWidth > window.innerHeight;
+}
+
+async function lockLandscape() {
+  // 1. Tenta a API nativa (funciona em Android Chrome e em PWA fullscreen)
+  if (screen.orientation && screen.orientation.lock) {
+    try {
+      await screen.orientation.lock('landscape');
+      rotLocked = true;
+      updateRotBtns();
+      return;
+    } catch(_) {
+      // API disponível mas bloqueada (iOS Safari, não-PWA) — cai no CSS fallback
+    }
+  }
+  // 2. CSS fallback: rotaciona o #rot-wrap 90° se estiver em retrato
+  if (!isNativeLandscape()) {
+    document.body.classList.add('rot-land');
+  }
+  rotLocked = true;
+  updateRotBtns();
+}
+
+function unlockRotation() {
+  // Libera a trava nativa, se existia
+  if (screen.orientation && screen.orientation.unlock) {
+    try { screen.orientation.unlock(); } catch(_) {}
+  }
+  // Remove o CSS fallback
+  document.body.classList.remove('rot-land');
+  rotLocked = false;
+  updateRotBtns();
+}
+
+function toggleRotation() {
+  if (rotLocked) unlockRotation();
+  else           lockLandscape();
+}
+
+function updateRotBtns() {
+  document.querySelectorAll('.rot-btn').forEach(btn => {
+    if (rotLocked) {
+      btn.classList.add('locked');
+      btn.textContent = '⟳ retrato';
+    } else {
+      btn.classList.remove('locked');
+      btn.textContent = '⟳ paisagem';
+    }
+  });
+}
+
+// Resincroniza o CSS fallback se o usuário girar o aparelho manualmente
+window.addEventListener('resize', () => {
+  if (rotLocked && !screen.orientation?.lock) {
+    // Só importa se estamos no CSS fallback
+    if (isNativeLandscape()) {
+      // Já está em paisagem real — remove o CSS extra pra não double-rotate
+      document.body.classList.remove('rot-land');
+    } else {
+      document.body.classList.add('rot-land');
+    }
+  }
+});
+
+document.querySelectorAll('.rot-btn').forEach(btn =>
+  btn.addEventListener('click', toggleRotation)
+);
+
+
+// ══════════════════════════════════════════════════════════════════
+// ÁUDIO — código original, sem modificações
 // ══════════════════════════════════════════════════════════════════
 let AC = null;
 const ND = {};
@@ -231,7 +353,6 @@ function unlockAC() {
     AC = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 });
   }
   if (AC.state === 'suspended') AC.resume();
-
   if (!AC_UNLOCKED) {
     AC_UNLOCKED = true;
     const buf = AC.createBuffer(1, 1, AC.sampleRate);
@@ -251,18 +372,12 @@ function toHz(note) {
 
 function noteOn(id, hz) {
   if (ND[id] || !AC) return;
-
   const mg = AC.createGain();
   mg.gain.setValueAtTime(0, AC.currentTime);
   mg.gain.linearRampToValueAtTime(0.28, AC.currentTime + 0.018);
-
   const lp = AC.createBiquadFilter();
-  lp.type = 'lowpass';
-  lp.frequency.value = 3200;
-  lp.Q.value = 0.5;
-  lp.connect(mg);
-  mg.connect(AC.destination);
-
+  lp.type = 'lowpass'; lp.frequency.value = 3200; lp.Q.value = 0.5;
+  lp.connect(mg); mg.connect(AC.destination);
   const os = [
     [hz,       0.5,  'sawtooth'],
     [hz*1.005, 0.35, 'sawtooth'],
@@ -274,7 +389,6 @@ function noteOn(id, hz) {
     o.connect(gn); gn.connect(lp); o.start();
     return o;
   });
-
   ND[id] = { os, mg };
 }
 
@@ -312,7 +426,6 @@ function buildPiano(pianoId) {
   const BP = WP * 0.62;
   const wiMap = {};
   whites.forEach((k, i) => wiMap[k.n] = i);
-
   PIANO_KEYS.forEach(k => {
     const el = document.createElement('div');
     el.dataset.n = k.n;
@@ -336,13 +449,11 @@ function buildPiano(pianoId) {
 function setupPianoTouch(pianoEl, hintId) {
   if (!pianoEl) return;
   const tmap = {};
-
   function keyAt(x, y) {
     const els = document.elementsFromPoint(x, y);
     for (const el of els) if (el.dataset && el.dataset.n && pianoEl.contains(el)) return el;
     return null;
   }
-
   function press(tid, el) {
     if (!el) return;
     const n = el.dataset.n;
@@ -355,7 +466,6 @@ function setupPianoTouch(pianoEl, hintId) {
     send('on', { id: n, hz });
     if (hintId) { const h = document.getElementById(hintId); if (h) h.style.display = 'none'; }
   }
-
   function release(tid) {
     const n = tmap[tid];
     if (!n) return;
@@ -365,12 +475,10 @@ function setupPianoTouch(pianoEl, hintId) {
     noteOff(pianoEl.id + '_' + n);
     send('off', { id: n });
   }
-
   pianoEl.addEventListener('touchstart', e => {
     e.preventDefault(); unlockAC();
     [...e.changedTouches].forEach(t => press(t.identifier, keyAt(t.clientX, t.clientY)));
   }, { passive: false });
-
   pianoEl.addEventListener('touchmove', e => {
     e.preventDefault();
     [...e.changedTouches].forEach(t => {
@@ -379,17 +487,13 @@ function setupPianoTouch(pianoEl, hintId) {
       else if (!el) release(t.identifier);
     });
   }, { passive: false });
-
   pianoEl.addEventListener('touchend', e => {
     e.preventDefault();
     [...e.changedTouches].forEach(t => release(t.identifier));
   }, { passive: false });
-
   pianoEl.addEventListener('touchcancel', e => {
     [...e.changedTouches].forEach(t => release(t.identifier));
   }, { passive: false });
-
-  // Mouse support
   let mouseDown = false;
   pianoEl.addEventListener('mousedown', e => {
     unlockAC(); mouseDown = true;
@@ -447,12 +551,10 @@ function buildBass(prefix) {
 function setupBassTouch(scrEl) {
   if (!scrEl) return;
   const tmap = {};
-
   function btnAt(x, y) {
     const el = document.elementFromPoint(x, y);
     return (el && el.classList.contains('bb') && scrEl.contains(el)) ? el : null;
   }
-
   function pressC(tid, el) {
     if (!el) return;
     const bid = el.dataset.bid;
@@ -467,7 +569,6 @@ function setupBassTouch(scrEl) {
       send('on', { id, hz: toHz(n) });
     });
   }
-
   function releaseC(tid) {
     const e = tmap[tid];
     if (!e) return;
@@ -478,22 +579,17 @@ function setupBassTouch(scrEl) {
       send('off', { id: e.bid + '_' + i });
     });
   }
-
   scrEl.addEventListener('touchstart', e => {
     e.preventDefault(); unlockAC();
     [...e.changedTouches].forEach(t => pressC(t.identifier, btnAt(t.clientX, t.clientY)));
   }, { passive: false });
-
   scrEl.addEventListener('touchend', e => {
     e.preventDefault();
     [...e.changedTouches].forEach(t => releaseC(t.identifier));
   }, { passive: false });
-
   scrEl.addEventListener('touchcancel', e => {
     [...e.changedTouches].forEach(t => releaseC(t.identifier));
   }, { passive: false });
-
-  // Mouse support
   let mdown = false;
   scrEl.addEventListener('mousedown', e => {
     unlockAC(); mdown = true;
@@ -532,6 +628,7 @@ function destroyPeer() {
   conn = null;
 }
 
+
 // ══════════════════════════════════════════════════════════════════
 // NAVEGAÇÃO
 // ══════════════════════════════════════════════════════════════════
@@ -548,7 +645,7 @@ document.getElementById('btn-r').addEventListener('click', () => {
   peer = new Peer(code, { debug: 0 });
   peer.on('connection', c => {
     conn = c;
-    c.on('open', () => { setStatus('r', true, 'Conectado'); show('s-rplay'); });
+    c.on('open', () => { setStatus('r', true, 'Conectado'); show('s-rplay'); lockLandscape(); });
     c.on('data', onRemote);
     c.on('close', () => { setStatus('r', false, 'Desconectado'); allOff(); });
     c.on('error', () => { setStatus('r', false, 'Erro'); allOff(); });
@@ -586,14 +683,37 @@ document.getElementById('btn-copy').addEventListener('click', () => {
   setTimeout(() => b.textContent = '📋 Copiar código', 2000);
 });
 
-document.getElementById('btn-solo').addEventListener('click', () => { setStatus('r', false, 'Solo'); show('s-rplay'); });
+document.getElementById('btn-solo').addEventListener('click', () => {
+  setStatus('r', false, 'Solo');
+  show('s-rplay');
+  // Mão Direita inicia em paisagem automaticamente
+  lockLandscape();
+});
+
 document.getElementById('btn-back-r').addEventListener('click', () => { destroyPeer(); show('s-role'); });
 document.getElementById('btn-back-l').addEventListener('click', () => show('s-role'));
-document.getElementById('back-rplay').addEventListener('click', () => { destroyPeer(); show('s-role'); });
-document.getElementById('back-lplay').addEventListener('click', () => { destroyPeer(); show('s-role'); });
+
+document.getElementById('back-rplay').addEventListener('click', () => {
+  unlockRotation(); destroyPeer(); show('s-role');
+});
+document.getElementById('back-lplay').addEventListener('click', () => {
+  unlockRotation(); destroyPeer(); show('s-role');
+});
 
 document.getElementById('btn-single').addEventListener('click', () => { destroyPeer(); show('s-single'); });
-document.getElementById('back-single').addEventListener('click', () => { destroyPeer(); allOff(); show('s-role'); });
+document.getElementById('back-single').addEventListener('click', () => {
+  unlockRotation(); destroyPeer(); allOff(); show('s-role');
+});
+
+// Ao entrar em s-rplay via conexão, também trava em paisagem
+const _origSetStatus = setStatus;
+// Intercepta a transição para s-rplay via peer connection
+function onConnectedRight() {
+  setStatus('r', true, 'Conectado');
+  show('s-rplay');
+  lockLandscape();
+}
+
 
 // ══════════════════════════════════════════════════════════════════
 // INIT
