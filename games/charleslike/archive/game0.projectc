@@ -215,7 +215,7 @@ max_count = 64
 max_emitter_count = 64
 
 [network]
-http_timeout = 0
+http_timeout = 10.0
 ssl_certificates = 
 http_thread_count = 4
 http_cache_enabled = 1
