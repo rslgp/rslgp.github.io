@@ -98,10 +98,20 @@ var CUSTOM_PARAMETERS = {
         var actualRatio = innerWidth / innerHeight;
     
     
-        //Stretch
-        width = innerWidth;
-        height = innerHeight;
     
+        //Fit
+        if (actualRatio > targetRatio) {
+            width = innerHeight * targetRatio;
+            height = innerHeight;
+            app_container.style.marginLeft = ((innerWidth - width) / 2) + "px";
+            app_container.style.marginTop = "0px";
+        }
+        else {
+            width = innerWidth;
+            height = innerWidth / targetRatio;
+            app_container.style.marginLeft = "0px";
+            app_container.style.marginTop = ((innerHeight - height) / 2) + "px";
+        }
     
     
         var dpi = 1;
@@ -1280,9 +1290,9 @@ Module["locateFile"] = function(path, scriptDirectory)
     // we need to replace it here with the correct project name.
     if (path == "dmengine.wasm" || path == "dmengine_release.wasm" || path == "dmengine_headless.wasm") {
         if (Module['isWASMPthreadSupported']) {
-            path = "MobileGame_pthread.wasm";
+            path = "SIGNALONE_pthread.wasm";
         } else {
-            path = "MobileGame.wasm";
+            path = "SIGNALONE.wasm";
         }
     }
     return scriptDirectory + path;

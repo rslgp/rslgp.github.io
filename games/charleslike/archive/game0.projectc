@@ -1,14 +1,14 @@
 [project]
-title = Mobile Game
+title = SIGNALONE
 version = 1.0
 publisher = 
-developer = 
+developer = reifel
 write_log = 0
 write_log_file = 0
 minimum_log_level = 1
 compress_archive = 1
 bundle_exclude_resources = RiveExt, spine, physics3d, webp, tremolo, record, liveupdate, profilerext, facebook
-title_as_file_name = MobileGame
+title_as_file_name = SIGNALONE
 
 [display]
 width = 640
@@ -205,7 +205,7 @@ wasm_streaming = 0
 show_fullscreen_button = 1
 show_made_with_defold = 1
 show_console_banner = 1
-scale_mode = stretch
+scale_mode = fit
 transparent_graphics_context = 0
 
 [particle_fx]
