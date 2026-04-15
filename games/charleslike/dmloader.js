@@ -1290,9 +1290,9 @@ Module["locateFile"] = function(path, scriptDirectory)
     // we need to replace it here with the correct project name.
     if (path == "dmengine.wasm" || path == "dmengine_release.wasm" || path == "dmengine_headless.wasm") {
         if (Module['isWASMPthreadSupported']) {
-            path = "SIGNALONE_pthread.wasm";
+            path = "SOLONE_pthread.wasm";
         } else {
-            path = "SIGNALONE.wasm";
+            path = "SOLONE.wasm";
         }
     }
     return scriptDirectory + path;

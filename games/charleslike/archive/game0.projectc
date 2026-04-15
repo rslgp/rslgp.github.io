@@ -1,5 +1,5 @@
 [project]
-title = SIGNALONE
+title = SOLONE
 version = 1.0
 publisher = 
 developer = reifel
@@ -8,7 +8,7 @@ write_log_file = 0
 minimum_log_level = 1
 compress_archive = 1
 bundle_exclude_resources = RiveExt, spine, physics3d, webp, tremolo, record, liveupdate, profilerext, facebook
-title_as_file_name = SIGNALONE
+title_as_file_name = SOLONE
 
 [display]
 width = 640
