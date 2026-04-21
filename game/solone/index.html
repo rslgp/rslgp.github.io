@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOLONE — Visual Design Brief</title>
+<style>
+:root {
+  --bg: #0d0d0d;
+  --panel: #1a1a2e;
+  --panel-2: #20203a;
+  --border: #2d2d4a;
+  --text: #e8e8ec;
+  --text-muted: #9a9ab0;
+  --accent: #f5d51a;
+  --accent-2: #4de6ff;
+  --orange: #ff8c1a;
+  --green: #1aff1a;
+  --teal: #27cfc3;
+  --danger: #ff3333;
+  --code-bg: #141428;
+  --sidebar-w: 280px;
+  --content-max: 920px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ── Layout ─────────────────────────── */
+.layout { display: flex; min-height: 100vh; }
+.sidebar {
+  width: var(--sidebar-w);
+  background: #0a0a14;
+  border-right: 1px solid var(--border);
+  padding: 24px 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.main {
+  flex: 1;
+  padding: 48px 64px 120px;
+  max-width: calc(var(--content-max) + 128px);
+}
+
+/* ── Sidebar / TOC ──────────────────── */
+.sidebar h2 {
+  color: var(--accent);
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 0 24px 16px;
+  margin: 0;
+  border-bottom: 1px solid var(--border);
+}
+.toc {
+  list-style: none;
+  padding: 16px 0;
+  margin: 0;
+}
+.toc li { margin: 0; }
+.toc a {
+  display: block;
+  padding: 8px 24px 8px 20px;
+  border-left: 3px solid transparent;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 13.5px;
+  transition: all 0.15s ease;
+}
+.toc a:hover {
+  color: var(--text);
+  background: var(--panel);
+  border-left-color: var(--accent-2);
+}
+.toc a.active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  background: var(--panel);
+  font-weight: 600;
+}
+.toc-num {
+  display: inline-block;
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-right: 8px;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+}
+.toc a.active .toc-num { color: var(--accent); }
+
+/* ── Typography ─────────────────────── */
+.main h1 {
+  font-size: 36px;
+  color: var(--accent);
+  margin: 0 0 8px;
+  letter-spacing: -0.5px;
+}
+.main .subtitle {
+  color: var(--text-muted);
+  margin: 0 0 40px;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.main h2 {
+  font-size: 26px;
+  color: var(--accent);
+  margin: 64px 0 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--border);
+  scroll-margin-top: 24px;
+}
+.main h2:first-of-type { margin-top: 20px; }
+.main h3 {
+  font-size: 19px;
+  color: var(--accent-2);
+  margin: 36px 0 14px;
+}
+.main h4 {
+  font-size: 15px;
+  color: var(--text);
+  margin: 20px 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.main p { margin: 0 0 16px; }
+.main strong { color: #fff; }
+.main em { color: var(--accent-2); font-style: normal; }
+.main code {
+  background: var(--code-bg);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+  color: var(--accent-2);
+}
+.main pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  overflow-x: auto;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #d0d0e0;
+}
+.main hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 40px 0;
+}
+
+/* ── Lists ──────────────────────────── */
+.main ul, .main ol { padding-left: 22px; margin: 0 0 16px; }
+.main li { margin-bottom: 6px; }
+.main li::marker { color: var(--text-muted); }
+
+/* ── Tables ─────────────────────────── */
+.main table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0 24px;
+  font-size: 13.5px;
+  background: var(--panel);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.main th, .main td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.main th {
+  background: var(--panel-2);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.main tr:last-child td { border-bottom: none; }
+.main tr:hover td { background: #23233d; }
+
+/* ── Color swatch ───────────────────── */
+.swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+/* ── Callouts ───────────────────────── */
+.callout {
+  background: var(--panel);
+  border-left: 4px solid var(--accent-2);
+  padding: 14px 18px;
+  margin: 18px 0;
+  border-radius: 0 6px 6px 0;
+  font-size: 14px;
+}
+.callout.warn { border-left-color: var(--orange); }
+.callout.danger { border-left-color: var(--danger); }
+.callout strong { color: var(--accent-2); }
+.callout.warn strong { color: var(--orange); }
+.callout.danger strong { color: var(--danger); }
+
+/* ── Tags ───────────────────────────── */
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.tag-new { background: #1a4d1a; color: var(--green); }
+.tag-upgrade { background: #4d3a1a; color: var(--orange); }
+
+/* ── ASCII art ──────────────────────── */
+.ascii {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px;
+  margin: 16px 0;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #c0c0d0;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* ── Back-to-top ────────────────────── */
+.to-top {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--accent);
+  color: #000;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 100;
+}
+.to-top.visible { opacity: 1; pointer-events: auto; }
+.to-top:hover { background: #fff; }
+
+/* ── Responsive ─────────────────────── */
+.mobile-toggle {
+  display: none;
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  z-index: 101;
+}
+@media (max-width: 900px) {
+  .layout { flex-direction: column; }
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 85%;
+    max-width: 320px;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 100;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .main { padding: 64px 20px 100px; }
+  .main h1 { font-size: 28px; }
+  .main h2 { font-size: 22px; }
+  .mobile-toggle { display: block; }
+  .main table { font-size: 12px; }
+  .main th, .main td { padding: 8px; }
+}
+</style>
+</head>
+<body>
+
+<button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰ Menu</button>
+
+<div class="layout">
+
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<aside class="sidebar">
+  <h2>SOLONE · Design Brief</h2>
+  <ul class="toc">
+    <li><a href="#sec-1"><span class="toc-num">01</span>Design Philosophy</a></li>
+    <li><a href="#sec-2"><span class="toc-num">02</span>Color Palette</a></li>
+    <li><a href="#sec-3"><span class="toc-num">03</span>Sprites</a></li>
+    <li><a href="#sec-4"><span class="toc-num">04</span>Particle Effects</a></li>
+    <li><a href="#sec-5"><span class="toc-num">05</span>Game Over Screen</a></li>
+    <li><a href="#sec-6"><span class="toc-num">06</span>Strategy Config Panel</a></li>
+    <li><a href="#sec-7"><span class="toc-num">07</span>Leaderboard Panel</a></li>
+    <li><a href="#sec-8"><span class="toc-num">08</span>HUD</a></li>
+    <li><a href="#sec-9"><span class="toc-num">09</span>Pause Overlay</a></li>
+    <li><a href="#sec-10"><span class="toc-num">10</span>Spectator Experience</a></li>
+    <li><a href="#sec-11"><span class="toc-num">11</span>Animation Timing</a></li>
+    <li><a href="#sec-12"><span class="toc-num">12</span>Typography</a></li>
+    <li><a href="#sec-13"><span class="toc-num">13</span>What NOT to Design</a></li>
+    <li><a href="#sec-14"><span class="toc-num">14</span>Deliverable Format</a></li>
+    <li><a href="#sec-15"><span class="toc-num">15</span>Priority Order</a></li>
+  </ul>
+</aside>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<main class="main">
+
+<h1>SOLONE — Visual Design Brief</h1>
+<p class="subtitle">
+<strong>For:</strong> UI/UX Designer &amp; VFX Artist<br>
+<strong>Game:</strong> SOLONE — <em>Survive alone. How long can you last?</em><br>
+<strong>Engine:</strong> Defold (Lua) · <strong>Canvas:</strong> 640 × 1136 px · <strong>Target:</strong> Mobile + HTML5<br>
+<strong>Tone:</strong> Minimalist arcade with maximum juice. Every moment of play should feel crisp, readable, and satisfying to both the player and a spectator watching the screen.
+</p>
+
+<!-- ── SECTION 1 ── -->
+<h2 id="sec-1">1 · Design Philosophy</h2>
+<p>SOLONE is intentionally minimal in structure but rich in feedback. The entire game is dots on a black field. That constraint is a feature — every piece of art must earn its place by communicating game state, not by decorating. The design goal is <strong>juiciness</strong>: every kill, every hit absorbed, every powerup collected must feel unmissably good through layered simultaneous feedback (scale + color + light).</p>
+
+<div class="callout">
+  <strong>Core visual contract:</strong>
+  <ul>
+    <li>The player always knows their powerup state from their sprite color alone.</li>
+    <li>Every enemy death is a small celebration.</li>
+    <li>Every dangerous moment has a visual warning that fires before the danger lands.</li>
+    <li>Spectators watching the screen should be able to follow what is happening without playing.</li>
+  </ul>
+</div>
+
+<!-- ── SECTION 2 ── -->
+<h2 id="sec-2">2 · Color Palette &amp; Identity</h2>
+<p>All art lives on a <strong>near-black background</strong> (<code>#0d0d0d</code>). Sprites use saturated hues with no gradients at rest — gradients are reserved for glow and flash effects.</p>
+
+<table>
+<thead><tr><th>Token</th><th>Hex</th><th>Used for</th></tr></thead>
+<tbody>
+<tr><td><span class="swatch" style="background:#0d0d0d"></span>bg</td><td><code>#0d0d0d</code></td><td>Background, always</td></tr>
+<tr><td><span class="swatch" style="background:#ffffff"></span>white</td><td><code>#ffffff</code></td><td>Default player, default enemy base, UI text</td></tr>
+<tr><td><span class="swatch" style="background:#ff8c1a"></span>orange</td><td><code>#ff8c1a</code></td><td>Flame powerup, cascade, expiry pulse</td></tr>
+<tr><td><span class="swatch" style="background:#ffff1a"></span>yellow</td><td><code>#ffff1a</code></td><td>Turret powerup, tackle glow</td></tr>
+<tr><td><span class="swatch" style="background:#1aff1a"></span>green</td><td><code>#1aff1a</code></td><td>Berserker powerup</td></tr>
+<tr><td><span class="swatch" style="background:#27cfc3"></span>teal</td><td><code>#27cfc3</code></td><td>Ice powerup</td></tr>
+<tr><td><span class="swatch" style="background:#4de6ff"></span>cyan</td><td><code>#4de6ff</code></td><td>Bullet-time, laser</td></tr>
+<tr><td><span class="swatch" style="background:#f5d51a"></span>gold</td><td><code>#f5d51a</code></td><td>Wild West, ironman, milestone celebration</td></tr>
+<tr><td><span class="swatch" style="background:#b3b3ff"></span>blue-ghost</td><td><code>#b3b3ff</code> @ 25%</td><td>Ghost powerup pulse</td></tr>
+<tr><td><span class="swatch" style="background:#8c8c8c"></span>grey-desat</td><td><code>#8c8c8c</code></td><td>Sniper active, fleeing enemies</td></tr>
+<tr><td><span class="swatch" style="background:#9999ff"></span>slow-blue</td><td><code>#9999ff</code></td><td>Slowed/iced enemy tint</td></tr>
+<tr><td><span class="swatch" style="background:#ff3333"></span>danger-red</td><td><code>#ff3333</code></td><td>Future use: damage flash</td></tr>
+<tr><td><span class="swatch" style="background:#1a1a2e"></span>ui-panel</td><td><code>#1a1a2e</code></td><td>Panel backgrounds</td></tr>
+<tr><td><span class="swatch" style="background:#4d4d4d"></span>btn-off</td><td><code>#4d4d4d</code></td><td>Disabled/inactive button fill</td></tr>
+<tr><td><span class="swatch" style="background:#267a40"></span>btn-on</td><td><code>#267a40</code></td><td>Active/selected button fill</td></tr>
+</tbody>
+</table>
+
+<!-- ── SECTION 3 ── -->
+<h2 id="sec-3">3 · Sprites — What Exists &amp; What Needs Replacing or Creating</h2>
+<div class="callout warn">
+All sprites are currently simple geometric shapes. Entries marked <span class="tag tag-upgrade">UPGRADE</span> need replacement; entries marked <span class="tag tag-new">NEW</span> do not exist yet.
+</div>
+
+<h3>3.1 · Player</h3>
+<p>The player is the character the user controls. Single circular sprite, ~40 px diameter at 1× scale. It scales up to 2.3× (berserker) and squashes/bounces constantly in response to game events.</p>
+
+<table>
+<thead><tr><th>State</th><th>Current</th><th>Desired</th></tr></thead>
+<tbody>
+<tr><td>Default</td><td>White circle</td><td><span class="tag tag-upgrade">UPGRADE</span> Clean glowing white circle with subtle inner core; slight bloom halo</td></tr>
+<tr><td>Berserker (rage)</td><td>Green tint</td><td>Tint is applied by code; sprite must look good when green-tinted</td></tr>
+<tr><td>Ghost</td><td>Semi-transparent blue pulse</td><td>Soft edge so semi-transparency reads as ethereal, not broken</td></tr>
+<tr><td>Protected hit</td><td>Scale squash only</td><td><span class="tag tag-new">NEW</span> Hit-ring sprite: white ring expanding outward from player, fades</td></tr>
+<tr><td>Death</td><td>Gray tint, scale reset</td><td><span class="tag tag-new">NEW</span> Death burst: 6–8 white line-fragments flying radially, 200ms</td></tr>
+</tbody>
+</table>
+
+<h4>Key animation moments (code-driven)</h4>
+<ul>
+<li>Powerup pickup: <code>1.0 → 1.2 → 1.0</code> scale in ~150ms</li>
+<li>Berserker entrance: scale overshoots to 2.3× with spring bounce</li>
+<li>Protected hit: squash to 82%, spring back</li>
+<li>Death: gray tint + any death-burst particle layer</li>
+</ul>
+
+<h3>3.2 · Enemies</h3>
+<p>Enemies are circular sprites (~32 px diameter). Each has a 2-character strategy label painted on top. Tints are applied by code based on state.</p>
+
+<table>
+<thead><tr><th>Sprite</th><th>Current</th><th>Desired</th></tr></thead>
+<tbody>
+<tr><td>Base enemy body</td><td>Colored circle</td><td><span class="tag tag-upgrade">UPGRADE</span> Circle with thin white ring outline (60% opacity); inner fill takes the code tint</td></tr>
+<tr><td>Strategy label</td><td>Engine text</td><td>Monospace bold, 8–10px, white, centered</td></tr>
+<tr><td>Tackle charge</td><td>Gold tint</td><td><span class="tag tag-new">NEW</span> Brief gold ring pulse emanating from enemy</td></tr>
+<tr><td>Slow/ice state</td><td>Blue tint</td><td><span class="tag tag-new">NEW</span> Ice crystal overlay: 3–4 diamond shards, 40% opacity</td></tr>
+<tr><td>Death</td><td>Scale-out + fade</td><td><span class="tag tag-upgrade">UPGRADE</span> Add circular color burst expanding ~1.5×, fades 140ms</td></tr>
+<tr><td>Spawn</td><td>Spring scale-in</td><td><span class="tag tag-new">NEW</span> White ring flash at spawn point, 80ms</td></tr>
+<tr><td>Flee</td><td>Gray tint</td><td>Fine as-is</td></tr>
+</tbody>
+</table>
+
+<h4>Strategy-specific visual identity (optional but high-value)</h4>
+<p>Each strategy could have a subtle body marking so experienced players identify them at a glance.</p>
+<table>
+<thead><tr><th>#</th><th>Strategy</th><th>Abbr.</th><th>Suggested marking</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>CHASE</td><td>CS</td><td>Plain circle — the baseline</td></tr>
+<tr><td>1</td><td>PREDICT</td><td>PR</td><td>Small forward-pointing arrow inside body</td></tr>
+<tr><td>2</td><td>FLANK L</td><td>FL</td><td>Small left-arc inside body</td></tr>
+<tr><td>3</td><td>FLANK R</td><td>FR</td><td>Small right-arc inside body</td></tr>
+<tr><td>4</td><td>DIAGONAL A</td><td>DA</td><td>45° diagonal tick inside body</td></tr>
+<tr><td>5</td><td>DIAGONAL B</td><td>DB</td><td>135° diagonal tick</td></tr>
+<tr><td>6</td><td>BOUNCE INTERCEPT</td><td>IC</td><td>Two parallel horizontal lines (=)</td></tr>
+<tr><td>7</td><td>BOUNCE BILLIARD</td><td>BL</td><td>Angled bounce line inside body</td></tr>
+<tr><td>8</td><td>BOUNCE SHADOW</td><td>SH</td><td>Body flattened slightly (ellipse) — wall-hugger</td></tr>
+<tr><td>9</td><td>QUADRANT PATROL</td><td>QP</td><td>Circle-within-circle (patrol ring)</td></tr>
+<tr><td>10</td><td>FALSE9</td><td>F9</td><td>Two-tone split — signals it is deceptive</td></tr>
+</tbody>
+</table>
+
+<h3>3.3 · Powerup Pickups</h3>
+<p>Powerups spawn every 10 seconds at a random position. Stationary with a label. They expire after 15 seconds. Each should be visually distinct by shape AND color.</p>
+
+<table>
+<thead><tr><th>Powerup</th><th>Code name</th><th>Color</th><th>Suggested shape</th></tr></thead>
+<tbody>
+<tr><td>FIRE</td><td><code>flame</code></td><td><span class="swatch" style="background:#ff8c1a"></span>Orange</td><td>Teardrop / flame silhouette</td></tr>
+<tr><td>ICE</td><td><code>ice</code></td><td><span class="swatch" style="background:#27cfc3"></span>Teal</td><td>Hexagon (snowflake)</td></tr>
+<tr><td>PUSH</td><td><code>squeegee</code></td><td><span class="swatch" style="background:#ffffff"></span>White</td><td>Horizontal bar with chevron</td></tr>
+<tr><td>GUN</td><td><code>turret</code></td><td><span class="swatch" style="background:#ffff1a"></span>Yellow</td><td>Crosshair circle</td></tr>
+<tr><td>RAGE</td><td><code>berserker</code></td><td><span class="swatch" style="background:#1aff1a"></span>Green</td><td>Spiked/jagged circle</td></tr>
+<tr><td>BOMB</td><td><code>bomb</code></td><td><span class="swatch" style="background:#ffffff"></span>White</td><td>Circle with fuse line</td></tr>
+<tr><td>AIM</td><td><code>sniper</code></td><td><span class="swatch" style="background:#8c8c8c"></span>Grey</td><td>Diamond / scope reticle</td></tr>
+<tr><td>ARTY</td><td><code>artillery</code></td><td><span class="swatch" style="background:#ff8c1a"></span>Orange</td><td>Triangle (downward shell)</td></tr>
+<tr><td>SLOW</td><td><code>bullet_time</code></td><td><span class="swatch" style="background:#4de6ff"></span>Cyan</td><td>Hourglass</td></tr>
+<tr><td>DUEL</td><td><code>wild_west</code></td><td><span class="swatch" style="background:#f5d51a"></span>Gold</td><td>Star (sheriff)</td></tr>
+<tr><td>GHOST</td><td><code>ghost</code></td><td><span class="swatch" style="background:#b3b3ff"></span>Blue-ghost</td><td>Ring with transparent center</td></tr>
+<tr><td>SPIN</td><td><code>ironman</code></td><td><span class="swatch" style="background:#f5d51a"></span>Gold</td><td>Circle with arm extending right</td></tr>
+<tr><td>LASER</td><td><code>laser</code></td><td><span class="swatch" style="background:#4de6ff"></span>Cyan</td><td>Horizontal beam line through circle</td></tr>
+<tr><td>CHAIN</td><td><code>cascade</code></td><td><span class="swatch" style="background:#ff8c1a"></span>Orange</td><td>Lightning bolt / branching line</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<strong>All powerups need:</strong>
+<ul>
+<li><strong>Idle pulse:</strong> subtle scale <code>1.0 → 1.07 → 1.0</code> on a ~1s loop (draws the eye)</li>
+<li><strong>Collect burst:</strong> brief flash of the powerup's color at collection point (120ms)</li>
+<li><strong>Expiry warning:</strong> after 10s on screen, begin a flicker/pulse signalling "pick me up soon"</li>
+</ul>
+</div>
+
+<h3>3.4 · Projectiles</h3>
+<table>
+<thead><tr><th>Sprite</th><th>Used by</th><th>Current</th><th>Desired</th></tr></thead>
+<tbody>
+<tr><td>Bullet</td><td>Turret</td><td>Small circle</td><td><span class="tag tag-upgrade">UPGRADE</span> Elongated oval, yellow-white, directional, 8×4 px, slight motion tail</td></tr>
+<tr><td>BT Bullet</td><td>Bullet-time</td><td>Small circle</td><td><span class="tag tag-upgrade">UPGRADE</span> Similar to turret bullet but cyan, smaller (6×3 px)</td></tr>
+<tr><td>Cascade projectile</td><td>Cascade chain</td><td>Orange circle</td><td><span class="tag tag-upgrade">UPGRADE</span> Bright orange core with electric-arc edges; should look like a spark</td></tr>
+<tr><td>WW Aim marker</td><td>Wild West</td><td>Small triangle</td><td><span class="tag tag-upgrade">UPGRADE</span> Gold arrowhead / bullet silhouette flying toward target</td></tr>
+<tr><td>Bomb</td><td>Bomb, Artillery</td><td>Circle with label</td><td><span class="tag tag-upgrade">UPGRADE</span> Round bomb body with lit fuse; countdown label stays</td></tr>
+<tr><td>Sniper shot</td><td>Sniper</td><td>draw_line</td><td><span class="tag tag-new">NEW</span> Fast narrow white streak sprite (40×2 px), visible ~80ms</td></tr>
+</tbody>
+</table>
+
+<h3>3.5 · Draw_line effects → Sprite replacements</h3>
+<p>These currently use the engine's debug <code>draw_line</code> which renders as 1px lines. They are functional but look unpolished.</p>
+
+<table>
+<thead><tr><th>Effect</th><th>What it is</th><th>Upgrade suggestion</th></tr></thead>
+<tbody>
+<tr><td>Ironman spinning arm</td><td>Gold line, 180px radius rotating around player</td><td>Thin elongated glowing sprite (gradient: bright gold core → transparent tips), rotated by code. Faint ghost trail at 30% opacity.</td></tr>
+<tr><td>Laser beam</td><td>Cyan line, bidirectional, 620px</td><td>Bright white-cyan center 4px wide, outer glow 12px, 620px length. On for 180ms then fade. Brief screen-edge flash at firing moment.</td></tr>
+<tr><td>Wild West cone</td><td>Two gold lines forming 60° cone</td><td>Cone-fill sprite: gold, 60°, ~500px long, filled 20% opacity, outlined 60%. Looks like a spotlight / danger zone.</td></tr>
+<tr><td>Cascade trail</td><td>Orange line between prev and current pos</td><td>Spark-trail particle: 4–6 orange-white dots fading over 80ms behind the projectile</td></tr>
+<tr><td>Cascade hop circle</td><td>Orange circle, 32 segments, drawn every frame</td><td>Keep the logic; upgrade to a proper orange ring sprite (1–2px stroke, 55% alpha)</td></tr>
+</tbody>
+</table>
+
+<!-- ── SECTION 4 ── -->
+<h2 id="sec-4">4 · Particle Effects</h2>
+<p>All effects below are currently absent or minimal. Each represents a UX moment where more visual feedback would increase satisfaction.</p>
+
+<h3>4.1 · Kill Confirmation <em>(highest priority)</em></h3>
+<p>When any enemy dies:</p>
+<ul>
+<li><strong>Burst:</strong> 6–10 tiny particles (enemy's current body color) fly outward radially, travel ~40px, fade in 200ms</li>
+<li><strong>Flash ring:</strong> white ring expands from death position, ~60px diameter at peak, fades in 150ms</li>
+<li><strong>Scale-out:</strong> sprite already does this; particle layer adds on top</li>
+</ul>
+
+<h3>4.2 · Powerup Collection Burst</h3>
+<ul>
+<li><strong>Color burst:</strong> 8 tiny particles in powerup's color fly outward from player, 30px, fade in 120ms</li>
+<li>Layered on top of player's existing scale burst for double-confirmation (transient + persistent)</li>
+</ul>
+
+<h3>4.3 · Powerup Expiry Flash</h3>
+<p>When a timed powerup expires (flame, turret, bullet_time, ghost, ironman, laser):</p>
+<ul>
+<li><strong>Orange pulse ring:</strong> ring expands from player, orange at 55% alpha, fades in 300ms</li>
+<li>Particle ring makes it unmissable vs. current tint-only approach</li>
+</ul>
+
+<h3>4.4 · Milestone Kill Celebration</h3>
+<p>At kill counts <strong>5, 10, 20, 50, 100</strong>:</p>
+<ul>
+<li><strong>Gold shower:</strong> 12–16 gold particles burst upward and fall, 400ms</li>
+<li><strong>Screen edge pulse:</strong> screen edges briefly pulse gold at 30% opacity for 150ms</li>
+</ul>
+
+<h3>4.5 · Bomb &amp; Artillery Explosion</h3>
+<ul>
+<li><strong>Inner flash:</strong> bright white circle expanding to explosion radius, fades in 100ms</li>
+<li><strong>Shockwave ring:</strong> white ring at edge of radius, expands 20% beyond, fades in 200ms</li>
+<li><strong>Debris:</strong> 8–12 tiny fragments fly outward, fade in 300ms</li>
+</ul>
+
+<h3>4.6 · Berserker Entry / Exit</h3>
+<ul>
+<li><strong>Entry:</strong> green radial burst from player, 2.3× radius, 300ms — matches Hulk-transform feel</li>
+<li><strong>Exit:</strong> green particles implode toward player center as scale shrinks (not outward)</li>
+</ul>
+
+<h3>4.7 · Squeegee Screen Wipe</h3>
+<p>The squeegee is a large horizontal bar sweeping the screen. Enemies it touches should:</p>
+<ul>
+<li>Flash white for 50ms</li>
+<li>Leave brief white streak trail</li>
+</ul>
+<p>The squeegee bar itself: leading edge glow (bright white 8px) and trailing smear (50% opacity, 20px fade).</p>
+
+<h3>4.8 · Death Balloon</h3>
+<p>Currently an emoji floats upward for 2.5s. Enhancements:</p>
+<ul>
+<li>Slight wobble animation (±3° rotation, 0.4s cycle)</li>
+<li>Optional: floating dust particles rising alongside</li>
+</ul>
+
+<h3>4.9 · Enemy Spawn Entrance</h3>
+<p>Currently a spring scale-in from 0. Add a brief white ring at the spawn position (80ms, expands to ~50px, fades) — signals "enemy appeared here".</p>
+
+<!-- ── SECTION 5 ── -->
+<h2 id="sec-5">5 · UI — Game Over Screen</h2>
+<p><strong>Canvas:</strong> Full 640×1136 overlay &nbsp;·&nbsp; <strong>Background:</strong> Semi-transparent dark overlay (72% black) over the frozen game scene</p>
+
+<h3>5.1 · Layout (top to bottom)</h3>
+<div class="ascii">┌─────────────────────────────────┐
+│  [SCORE: 47 kills · 3m 12s]     │  Large, centered, white bold
+│  [BEST:  62 kills · 5m 04s]     │  Smaller, muted white
+│                                  │
+│  [KILLED BY: FALSE9 >>]          │  Deaths table, monospace
+│  CS  12   PR  8   F9 >> 5 ...    │  ">>" marks the killer row
+│                                  │
+│  [ PLAY NORMAL ]  [ PLAY HARD ]  │  Primary action buttons
+│                                  │
+│  [ ☑ TACKLE ON ]                 │  Checkbox toggle
+│  [ CFG ENEMIES ]                 │  Opens strategy config
+│                                  │
+│  [ ★ RATE ]  [ ↑ SHARE ]         │  Secondary actions
+│  [ 🏆 LEADERBOARD ]              │
+│  [ ✉ SUBMIT SCORE ]              │  Hidden unless eligible
+│                                  │
+│  [Nickname input field]          │
+│  [ PT-BR ▾ ]  [ EN ]             │  Language switcher
+│                                  │
+│  [FAVE POWERUP poll]             │  9-option grid
+└─────────────────────────────────┘</div>
+
+<h3>5.2 · Button Specs</h3>
+<table>
+<thead><tr><th>Button</th><th>Size</th><th>Default</th><th>Pressed</th><th>Disabled</th></tr></thead>
+<tbody>
+<tr><td>PLAY NORMAL</td><td>260×64 px</td><td>Dark green <code>#267a40</code>, white bold</td><td>Scale 0.92×, 60ms</td><td>N/A</td></tr>
+<tr><td>PLAY HARD</td><td>260×64 px</td><td>Dark red <code>#7a2626</code>, white bold</td><td>Scale 0.92×, 60ms</td><td>N/A</td></tr>
+<tr><td>TACKLE toggle</td><td>240×52 px</td><td>Gray (off) / green (on)</td><td>Scale 0.92×</td><td>—</td></tr>
+<tr><td>CFG ENEMIES</td><td>240×52 px</td><td>Dark neutral <code>#3a3a3a</code></td><td>Scale 0.92×</td><td>Grayed out</td></tr>
+<tr><td>RATE</td><td>140×48 px</td><td>Outlined gold, ★ + text</td><td>Fill gold</td><td>—</td></tr>
+<tr><td>SHARE</td><td>140×48 px</td><td>Outlined green, ↑ + text</td><td>Fill green</td><td>Gray when no score</td></tr>
+<tr><td>LEADERBOARD</td><td>280×52 px</td><td>Outlined white, 🏆 + text</td><td>Fill white, text dark</td><td>—</td></tr>
+<tr><td>SUBMIT SCORE</td><td>280×52 px</td><td>Filled gold <code>#f5d51a</code>, dark text</td><td>Scale 0.92×</td><td>Hidden</td></tr>
+</tbody>
+</table>
+<p><strong>All buttons:</strong> 12px corner radius. Tap produces <code>0.92×</code> scale squash over 60ms, springs back over 80ms.</p>
+
+<h3>5.3 · Score / Best Text Animation</h3>
+<ul>
+<li><strong>New personal best:</strong> gold flash + scale bounce on the record (<code>1.35×</code>, 180ms up, 180ms down)</li>
+<li><strong>Kills table reveal:</strong> fades in at 40% into overlay animation (staggered)</li>
+<li><strong>Overlay entrance:</strong> dark background fades from 0% to 72% over 220ms</li>
+</ul>
+
+<h3>5.4 · Nickname Input Field</h3>
+<ul>
+<li>Rectangle, 400×52 px, dark background <code>#1e1e3a</code> (idle) → brighter blue <code>#2e2e6a</code> (editing)</li>
+<li>Blinking cursor <code>|</code> while editing, 500ms blink cycle</li>
+<li>Monospace font, white text</li>
+</ul>
+
+<!-- ── SECTION 6 ── -->
+<h2 id="sec-6">6 · UI — Strategy Config Panel (CFG menu)</h2>
+<p>Full-overlay modal that appears when the player taps <strong>CFG ENEMIES</strong>.</p>
+
+<div class="ascii">┌─────────────────────────────────┐
+│  [dark panel overlay]           │
+│  ╔═══════════════════════════╗  │
+│  ║  CONFIGURE ENEMIES        ║  │
+│  ║  Disabled strategies:     ║  │
+│  ║  [CS][PR][FL][FR][DA]     ║  │
+│  ║  [DB][IC][BL][SH][QP][F9] ║  │
+│  ║                           ║  │
+│  ║       [ DONE ]            ║  │
+│  ╚═══════════════════════════╝  │
+└─────────────────────────────────┘</div>
+
+<ul>
+<li>Each strategy button: <strong>80×44 px</strong>, 2-char abbreviation</li>
+<li><strong>Enabled</strong> (default): green <code>#267a40</code> fill, white text</li>
+<li><strong>Disabled</strong>: dark gray <code>#4d4d4d</code>, 60% text opacity, optional strikethrough</li>
+<li>Microinteraction: scale squash <code>0.92×</code> on tap</li>
+</ul>
+
+<!-- ── SECTION 7 ── -->
+<h2 id="sec-7">7 · UI — Leaderboard Panel</h2>
+<p>Overlay panel that slides in from the bottom or fades in.</p>
+
+<div class="ascii">┌────────────────────────────────┐
+│  [LEADERBOARD]                 │
+│  [BY KILLS ●] [BY TIME  ○]     │  sort toggle
+│  ─────────────────────────     │
+│   1. PlayerName   124K  208s   │
+│   2. anon         98K   145s   │
+│   3. Rafinha      87K   320s   │
+│  ...                           │
+│  ─────────────────────────     │
+│         [ CLOSE ]              │
+└────────────────────────────────┘</div>
+
+<ul>
+<li>Panel: <code>#1a1a2e</code> background, 24px corner radius</li>
+<li>Sort buttons: pill-shaped toggle, 160×44 px; active = green, inactive = gray</li>
+<li>Row text: monospace, white, 13px, rank number in muted yellow</li>
+<li>CLOSE button: 200×52 px, outlined white</li>
+</ul>
+
+<!-- ── SECTION 8 ── -->
+<h2 id="sec-8">8 · UI — HUD (during gameplay)</h2>
+<p>Always visible during play. Extremely minimal — any distraction costs player attention.</p>
+
+<div class="ascii">[KILL COUNTER — world space, top-center]
+   "⚔ 47" or equivalent
+   On each kill: scale pop (1.45×)
+   At milestones (5/10/20/50/100): gold flash + 2× bounce
+
+[PAUSE BUTTON — top-right]
+   60×60 px min (thumb hit area)
+   Icon: two vertical bars (standard pause)
+   Scale squash on tap
+
+[VERSION — bottom-left]
+   "v1.0.0" in yellow, 10px, muted</div>
+
+<h3>Kill Counter Visual Spec</h3>
+<ul>
+<li>Font: bold, high contrast, white</li>
+<li>Lives in world-space (sits behind enemies by z-layer)</li>
+<li>Regular kill: brief scale pop <code>1.45×</code>, 80ms up, 100ms back</li>
+<li>Milestone: gold flash (<code>#f5d51a</code> → white over 550ms) + <code>2.0×</code> bounce</li>
+</ul>
+
+<!-- ── SECTION 9 ── -->
+<h2 id="sec-9">9 · Pause Overlay</h2>
+
+<div class="ascii">┌─────────────────────────────────────────────────────┐
+│  [Frozen game scene, 60%+ dark overlay]             │
+│                                                     │
+│              [  PAUSED  ]                           │
+│                                                     │
+│             [ ▶ RESUME ]                            │
+│             [ ★ RATE   ]                            │
+│             [ 🏆 LEADERBOARD ]                      │
+│             [ ↑ SHARE  ]                            │
+│                                                     │
+│             [FAVE POWERUP poll]                     │
+└─────────────────────────────────────────────────────┘</div>
+
+<ul>
+<li>Overlay: <code>#000000</code> at 60% alpha — must clearly separate paused from playing</li>
+<li>RESUME button: largest element, green, prominent</li>
+<li>PAUSED label: large, white, centered</li>
+<li>All elements fade in over 150ms on pause</li>
+</ul>
+
+<!-- ── SECTION 10 ── -->
+<h2 id="sec-10">10 · Spectator Experience — What an Observer Sees</h2>
+<p>SOLONE is played on a mobile screen that others may watch. Visual design should communicate game state to a spectator with no context.</p>
+
+<div class="callout">
+<strong>What a spectator needs to read at a glance:</strong>
+<ol>
+<li><strong>Where is the player?</strong> → White glowing dot, always the brightest object</li>
+<li><strong>Is the player in danger?</strong> → Enemy tints and proximity</li>
+<li><strong>What powerup is active?</strong> → Player tint color (saturated enough to read at arm's length)</li>
+<li><strong>Is the game going well?</strong> → Kill counter top-center, visible without squinting</li>
+<li><strong>Is something exciting happening?</strong> → Particle bursts, explosions, chain lightning must register as events from 50cm away</li>
+</ol>
+</div>
+
+<h4>Spectator-specific enhancements</h4>
+<ul>
+<li>Kill milestone celebrations (5/10/20/50/100) must be visible to someone not holding the phone</li>
+<li>Bomb explosions: shockwave ring reaches 60% of screen width at max radius</li>
+<li>Cascade chain lightning: each hop produces a visible arc/flash, not just a dot flying between enemies</li>
+<li>Berserker: when player is in RAGE (green, 2.3×), it must be obvious that something exceptional is happening</li>
+</ul>
+
+<!-- ── SECTION 11 ── -->
+<h2 id="sec-11">11 · Animation Timing Reference</h2>
+<p>All timing values are what the code currently uses. Designer should target these for sprite animations.</p>
+
+<table>
+<thead><tr><th>Event</th><th>Duration</th><th>Feel</th></tr></thead>
+<tbody>
+<tr><td>Button press</td><td>60ms down / 80ms restore</td><td>Fast snap</td></tr>
+<tr><td>Powerup pickup burst</td><td>100ms up / 80ms down</td><td>Snappy</td></tr>
+<tr><td>Regular kill pop</td><td>80ms up / 100ms down</td><td>Quick bounce</td></tr>
+<tr><td>Milestone kill bounce</td><td>140ms up (2×) / 140ms down</td><td>Spring overshoot</td></tr>
+<tr><td>Enemy spawn entrance</td><td>220ms</td><td>Spring (overshoot 1.1× → settle)</td></tr>
+<tr><td>Enemy death scale-out</td><td>140ms</td><td>Fast ease-out</td></tr>
+<tr><td>Berserker entrance</td><td>450ms</td><td>Heavy spring overshoot</td></tr>
+<tr><td>Berserker exit</td><td>750ms</td><td>Slow deflate, ease-in</td></tr>
+<tr><td>Protected hit squash</td><td>70ms down / 120ms restore</td><td>Elastic</td></tr>
+<tr><td>Laser beam flash</td><td>180ms visible</td><td>Hard cut in, fade out</td></tr>
+<tr><td>Powerup expiry pulse</td><td>300ms</td><td>Orange → white, ease-out</td></tr>
+<tr><td>Overlay fade-in</td><td>220ms</td><td>Ease-out</td></tr>
+<tr><td>Score text celebrate</td><td>180ms up / 180ms down</td><td>Bounce</td></tr>
+</tbody>
+</table>
+
+<!-- ── SECTION 12 ── -->
+<h2 id="sec-12">12 · Typography</h2>
+<p>Engine-rendered label text. Designer specifies the desired look; implementation uses system/embedded font.</p>
+
+<table>
+<thead><tr><th>Usage</th><th>Weight</th><th>Size</th><th>Color</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Kill counter</td><td>Bold</td><td>28–32px</td><td>White</td><td>World-space, must read at any enemy density</td></tr>
+<tr><td>Strategy abbr. on enemy</td><td>Bold</td><td>8–10px</td><td>White</td><td>Monospace preferred</td></tr>
+<tr><td>Score on game-over</td><td>Bold</td><td>26px</td><td>White</td><td>—</td></tr>
+<tr><td>Best score</td><td>Regular</td><td>18px</td><td>White 70%</td><td>—</td></tr>
+<tr><td>Deaths table</td><td>Regular</td><td>12px</td><td>White</td><td>Monospace — column alignment matters</td></tr>
+<tr><td>Button labels</td><td>Bold</td><td>15–17px</td><td>White</td><td>All-caps preferred</td></tr>
+<tr><td>Nickname input</td><td>Regular</td><td>16px</td><td>White</td><td>Monospace</td></tr>
+<tr><td>Leaderboard rows</td><td>Regular</td><td>13px</td><td>White</td><td>Monospace — fixed-width columns</td></tr>
+<tr><td>Version label</td><td>Regular</td><td>10px</td><td>Yellow 60%</td><td>Not for players</td></tr>
+</tbody>
+</table>
+
+<!-- ── SECTION 13 ── -->
+<h2 id="sec-13">13 · What NOT to Design</h2>
+<div class="callout danger">
+These are hard constraints. Respecting them is part of the brief.
+</div>
+
+<ul>
+<li><strong>No background art.</strong> Pure black. No grid, no texture, no vignette. The action is the visual.</li>
+<li><strong>No enemy health bars.</strong> Enemies die in one hit.</li>
+<li><strong>No damage numbers.</strong> Kill counter does all score communication.</li>
+<li><strong>No tutorial overlays.</strong> Game teaches through play.</li>
+<li><strong>No character faces or personalities.</strong> Everything is abstract geometry — circles, lines, arcs.</li>
+<li><strong>No persistent glow around the player.</strong> Player tint communicates powerup state; a permanent halo would reduce legibility of that signal.</li>
+<li><strong>No UI chrome during gameplay.</strong> Only kill counter and pause button appear during play. Nothing else.</li>
+</ul>
+
+<!-- ── SECTION 14 ── -->
+<h2 id="sec-14">14 · Deliverable Format</h2>
+
+<h4>Sprites</h4>
+<ul>
+<li><strong>PNG with transparency</strong> (alpha channel required for all game objects)</li>
+<li><strong>1× and 2× versions</strong> (e.g. <code>sprite.png</code> at 64×64, <code>sprite@2x.png</code> at 128×128)</li>
+<li><strong>Atlas-compatible:</strong> no bleeding edges; 2px transparent padding on all sides</li>
+<li><strong>Defold atlas naming:</strong> use in-game ID (e.g. <code>player</code>, <code>enemy_base</code>, <code>powerup_flame</code>, <code>fx_kill_burst</code>, <code>btn_play_normal</code>)</li>
+</ul>
+
+<h4>Particle frames</h4>
+<ul>
+<li>A spritesheet (single PNG, uniform grid) OR</li>
+<li>Individual numbered frames (e.g. <code>fx_kill_burst_01.png</code> … <code>fx_kill_burst_08.png</code>)</li>
+</ul>
+
+<!-- ── SECTION 15 ── -->
+<h2 id="sec-15">15 · Priority Order</h2>
+<p>Ship in this order — earlier items have the most gameplay impact per second on screen:</p>
+
+<ol>
+<li>Player sprite (always visible)</li>
+<li>Enemy base sprite + death burst particle</li>
+<li>All 14 powerup pickup icons</li>
+<li>Kill counter visual refresh</li>
+<li>Bomb / explosion particle</li>
+<li>Cascade spark projectile + hop circle ring</li>
+<li>Ironman arm sprite (replace draw_line)</li>
+<li>Laser beam sprite (replace draw_line)</li>
+<li>Wild West cone fill sprite (replace draw_line)</li>
+<li>Turret bullet + BT bullet</li>
+<li>Game Over screen buttons and layout</li>
+<li>Pause overlay</li>
+<li>Leaderboard panel</li>
+<li>Strategy config panel</li>
+<li>Milestone celebration particles</li>
+<li>All remaining polish (spawn flash, slow-ice crystals, etc.)</li>
+</ol>
+
+<hr>
+<p style="color: var(--text-muted); font-size: 12px; text-align: center; margin-top: 40px;">
+SOLONE · Design Brief · Generated from solone.yaml and v3_ui_ux.yaml · 2026-04-21
+</p>
+
+</main>
+</div>
+
+<a href="#" class="to-top" id="toTop">↑ Top</a>
+
+<script>
+// ── TOC active section highlighting ──
+const sections = document.querySelectorAll('h2[id]');
+const tocLinks = document.querySelectorAll('.toc a');
+const toTop = document.getElementById('toTop');
+
+function updateActive() {
+  let current = sections[0].id;
+  const scrollPos = window.scrollY + 100;
+  sections.forEach(s => { if (s.offsetTop <= scrollPos) current = s.id; });
+  tocLinks.forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+  toTop.classList.toggle('visible', window.scrollY > 400);
+}
+
+window.addEventListener('scroll', updateActive, { passive: true });
+updateActive();
+
+// ── Mobile: close sidebar after link tap ──
+tocLinks.forEach(a => {
+  a.addEventListener('click', () => {
+    if (window.innerWidth <= 900) {
+      document.querySelector('.sidebar').classList.remove('open');
+    }
+  });
+});
+</script>
+
+</body>
+</html>
