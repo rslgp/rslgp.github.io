@@ -7,6 +7,7 @@ write_log = 0
 write_log_file = 0
 minimum_log_level = 1
 compress_archive = 1
+bundle_resources = /html5/
 bundle_exclude_resources = RiveExt, spine, physics3d, webp, tremolo, record, liveupdate, profilerext, facebook
 title_as_file_name = SOLONE
 
