@@ -145,6 +145,30 @@
 	}
 	</style>
   <link rel=icon type=image/x-icon href=fav.ico>
+<!-- PWA-lite: head fragment -->
+<!--
+  Injected post-bob into the bundled index.html by scripts/pwa_inject.py
+  (called from build_deploy_charleslike.bat :pwa_overlay), spliced in just
+  before </head>.
+
+  Why this exists: headless bob emits Defold's DEFAULT index.html and IGNORES
+  game.project html_template, and bundle_resources=/html5/ silently skips flat
+  html5/ files. So the PWA <head> tags that live inline in main/html5_template.html
+  never reach the DEPLOYED page on their own. This fragment is the PRODUCTION
+  source of truth for them. Keep it in sync with main/html5_template.html (that
+  copy only reaches Defold-editor preview builds).
+
+  The "PWA-lite: head fragment" marker on line 1 is the idempotency guard:
+  pwa_inject.py skips the splice if it is already present, so re-running the
+  overlay (or re-deploying) is a no-op.
+-->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0d0d0d">
+<link rel="apple-touch-icon" href="cover.png">
+<link rel="apple-touch-icon" sizes="192x192" href="cover.png">
 </head>
 
 <body>
@@ -191,5 +215,136 @@
 			runningFromFileWarning.parentNode.removeChild(runningFromFileWarning);
 		}
 	</script>
+<!-- PWA-lite: body fragment -->
+<!--
+  Injected post-bob into the bundled index.html by scripts/pwa_inject.py
+  (called from build_deploy_charleslike.bat :pwa_overlay), spliced in just
+  before </body>.
+
+  Carries everything bob's DEFAULT index.html lacks but the game needs on the
+  web: (1) the reduced-motion bridge settings.is_reduced_motion() polls, (2) the
+  iOS haptic gesture primer, (3) the PWA install bridge globals
+  install_options.lua::try_pwa_install() polls, and (4) the HYBRID service-worker
+  registration with the id-546 back-compat auto-reload rescue.
+
+  This is the PRODUCTION source of truth (headless bob ignores html_template, so
+  the inline copy in main/html5_template.html only reaches editor preview). Keep
+  the two in sync. The "PWA-lite: body fragment" marker on line 1 is the
+  idempotency guard (pwa_inject.py skips if already present).
+-->
+<script>
+  // UXBR-004a reduced-motion bridge. settings.is_reduced_motion() polls this
+  // global. Read once at boot AND subscribe to changes so the user can flip the
+  // OS setting without reloading. WCAG 2.2 SC 2.3.3.
+  (function () {
+    try {
+      var mql = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+      window.__solone_reduced_motion = !!(mql && mql.matches);
+      if (mql && mql.addEventListener) {
+        mql.addEventListener('change', function (e) {
+          window.__solone_reduced_motion = !!e.matches;
+        });
+      }
+    } catch (e) {
+      window.__solone_reduced_motion = false;
+    }
+  })();
+
+  // JUICE-001 haptic gesture priming. iOS Safari gates navigator.vibrate so the
+  // FIRST call must run inside a user-gesture stack. Unlock the channel on the
+  // first pointer event anywhere; subsequent engine-stack calls from
+  // main/scene/util/haptic.lua then succeed.
+  (function () {
+    var primed = false;
+    var onPrime = function () {
+      if (primed) return;
+      primed = true;
+      try { if (navigator.vibrate) navigator.vibrate(1); } catch (e) {}
+      document.removeEventListener('touchstart', onPrime, true);
+      document.removeEventListener('mousedown', onPrime, true);
+    };
+    document.addEventListener('touchstart', onPrime, true);
+    document.addEventListener('mousedown', onPrime, true);
+  })();
+
+  // PWA install bridge — install_options.lua:try_pwa_install() polls these
+  // globals. Chrome/Edge/Android fire `beforeinstallprompt` once the manifest +
+  // SW criteria are met; we stash the event and expose the userChoice outcome so
+  // the in-game install prompt can drive Chrome's native Install dialog. iOS
+  // Safari does NOT fire it (Apple policy) — install_options.lua falls back to
+  // the share-sheet "Add to Home Screen" instructions there.
+  window.__solone_install_prompt = null;
+  window.__solone_install_outcome = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    window.__solone_install_prompt = e;
+    e.userChoice.then(function (choice) {
+      window.__solone_install_outcome = choice && choice.outcome === 'accepted'
+        ? 'installed' : 'dismissed';
+      window.__solone_install_prompt = null;
+    }).catch(function () {
+      window.__solone_install_outcome = 'dismissed';
+      window.__solone_install_prompt = null;
+    });
+  });
+  window.addEventListener('appinstalled', function () {
+    window.__solone_install_outcome = 'installed';
+    window.__solone_install_prompt = null;
+  });
+
+  // Service worker registration — required for Chrome to consider the app
+  // installable, and gives offline replay. Strategy is HYBRID (network-first
+  // navigation + stale-while-revalidate assets; see service-worker.js). Here we
+  // also (a) stop the HTTP cache from masking a new service-worker.js
+  // (updateViaCache:'none'), (b) force an update check on every load
+  // (reg.update()), and (c) auto-reload ONCE when a freshly deployed SW takes
+  // control. id 546 back-compat: also listen on the SW's SW_VERSION_BUMP
+  // postMessage + a BroadcastChannel('solone-sw') so a trapped tab whose
+  // controllerchange missed still gets rescued; a single-shot guard collapses
+  // all three signals to one reload.
+  if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+    var hadController = !!navigator.serviceWorker.controller;
+    window.__solone_sw_reloaded = false;
+
+    function reloadOnce(reason) {
+      if (window.__solone_sw_reloaded) return;
+      window.__solone_sw_reloaded = true;
+      try { window.location.reload(); } catch (e) {}
+    }
+
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      // Only auto-reload for an UPDATE (a controller already existed at load).
+      // On the first-ever install there is no stale content to flush, so the
+      // initial controllerchange must NOT reload (it would boot-loop a first visit).
+      if (!hadController) return;
+      reloadOnce('controllerchange');
+    });
+
+    navigator.serviceWorker.addEventListener('message', function (e) {
+      if (e && e.data && e.data.type === 'SW_VERSION_BUMP') {
+        if (!hadController) return;
+        reloadOnce('sw-message');
+      }
+    });
+
+    try {
+      if (typeof BroadcastChannel === 'function') {
+        var bc = new BroadcastChannel('solone-sw');
+        bc.addEventListener('message', function (e) {
+          if (e && e.data && e.data.type === 'SW_VERSION_BUMP') {
+            if (!hadController) return;
+            reloadOnce('broadcast-channel');
+          }
+        });
+      }
+    } catch (e) {}
+
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' })
+        .then(function (reg) { try { reg.update(); } catch (e) {} })
+        .catch(function () {});
+    });
+  }
+</script>
 </body>
 </html>
