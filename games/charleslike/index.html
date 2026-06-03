@@ -144,18 +144,6 @@
 		background-image: url("cover.png");
 	}
 	</style>
-  <!-- ─── PWA-lite: head fragment (id 539) ────────────────────────────
-       Injected into bob's generated index.html by scripts/pwa_inject.py
-       (called from build_deploy_charleslike.bat :pwa_overlay). NOT in
-       html5_template.html — bob would otherwise re-bake the template
-       AND overwrite any manual edits to index.html on each rebuild.
-       Dependency-injection model: template stays minimal; PWA fragments
-       live here as the "injectable" composed into bob's output post-build.
-       ───────────────────────────────────────────────────────────────── -->
-  <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#0d0d0d">
-  <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
-  <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
 </head>
 
 <body>
@@ -202,48 +190,5 @@
 			runningFromFileWarning.parentNode.removeChild(runningFromFileWarning);
 		}
 	</script>
-  <!-- ─── PWA-lite: body fragment (id 539) ────────────────────────────
-       Injected into bob's generated index.html by scripts/pwa_inject.py
-       just before </body>. Carries (1) the install-bridge globals that
-       install_options.lua::try_pwa_install() polls, (2) beforeinstall
-       prompt + appinstalled handlers, (3) service-worker registration.
-       CACHE name in service-worker.js is auto-bumped per version by
-       scripts/bump_version.sh (id 534) so installed users pick up the
-       new bundle on next open without manual cache-bust.
-       ───────────────────────────────────────────────────────────────── -->
-  <script>
-    // PWA install bridge — install_options.lua:try_pwa_install() polls these globals.
-    // Chrome/Edge/Android fire `beforeinstallprompt` once the manifest + SW criteria
-    // are met. We stash the event and expose the userChoice outcome so the in-game
-    // btn_install can drive Chrome's native Install dialog without a separate UI here.
-    // iOS Safari does NOT fire this event (Apple policy) — there install_options.lua
-    // falls back to the share-sheet "Add to Home Screen" instructions.
-    window.__solone_install_prompt  = null;
-    window.__solone_install_outcome = null;
-    window.addEventListener('beforeinstallprompt', function (e) {
-      e.preventDefault();
-      window.__solone_install_prompt = e;
-      e.userChoice.then(function (choice) {
-        window.__solone_install_outcome = choice && choice.outcome === 'accepted'
-          ? 'installed' : 'dismissed';
-        window.__solone_install_prompt = null;
-      }).catch(function () {
-        window.__solone_install_outcome = 'dismissed';
-        window.__solone_install_prompt = null;
-      });
-    });
-    window.addEventListener('appinstalled', function () {
-      window.__solone_install_outcome = 'installed';
-      window.__solone_install_prompt  = null;
-    });
-
-    // Service worker registration — required for Chrome to consider the app
-    // installable, and gives offline replay of cached assets on flaky networks.
-    if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
-      window.addEventListener('load', function () {
-        navigator.serviceWorker.register('service-worker.js').catch(function () {});
-      });
-    }
-  </script>
 </body>
 </html>
