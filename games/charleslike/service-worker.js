@@ -55,7 +55,7 @@
 // version change. DO NOT edit the version string manually — keep the literal
 // `solone-v` prefix + the X.Y.Z numeric tail intact so the bump regex matches.
 
-const CACHE = 'solone-v2.10.345';
+const CACHE = 'solone-v3.10.347';
 
 // Core shell — pre-cached at install. Minimal app surface.
 const CORE = [
