@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, minimal-ui, shrink-to-fit=no, viewport-fit=cover">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<!-- The above 4 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+
+	<title>Snake Multiplayer PeerJS 0.1</title>
+	<style type='text/css'>
+	/* Disable user selection to avoid strange bug in Chrome on Windows:
+	* Selecting a text outside the canvas, then clicking+draging would
+	* drag the selected text but block mouse down/up events to the engine.
+	*/
+	body {
+	
+		position: fixed; /* Prevent overscroll */
+	
+		margin:0;
+		padding:0;
+	}
+
+	.canvas-app-container {
+		width: 100%;
+		height: 100%;
+		position: absolute;
+		align-items: center;
+		justify-content: center;
+		overflow: hidden;
+	}
+
+	.canvas-app-container:-webkit-full-screen {
+		/* Auto width and height in Safari/Chrome fullscreen. */
+		width: auto;
+		height: auto;
+	}
+
+	#canvas {
+		outline: none;
+		border: 0;
+		width: 100%;
+		vertical-align: bottom;
+	}
+
+	#canvas-container {
+		position: relative;
+	}
+
+	canvas:focus, canvas:active {
+		outline: none;
+		border: 0;
+		ie-dummy: expression(this.hideFocus=true);
+		-moz-outline-style: none;
+	}
+
+	body, div {
+		-webkit-tap-highlight-color: rgba(0,0,0,0);
+		-webkit-touch-callout: none;
+		-webkit-user-select: none;
+		-khtml-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+	}
+
+		.canvas-app-progress {
+		position: absolute;
+		background-color: #d1dbeb;
+		height: 6px;
+		margin-top: -6px;
+		width: 100%;
+	}
+
+	.canvas-app-progress-bar {
+		font-size: 12px;
+		height: 6px;
+		color: rgb(255, 255, 255);
+		background-color: #1a72eb;
+		text-align: center;
+		line-height: 20px;
+		transition: transform 1s ease;
+		transform-origin: left;
+		transform: scaleX(1.0);
+	}
+	
+	.button {
+		background-image: url("data:image/svg+xml,%3C!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'%3E%3Csvg xmlns='http://www.w3.org/2000/svg' baseProfile='full' width='16' height='16' viewBox='0 0 16 16' version='1.1' xml:space='preserve'%3E%3Ctitle%3Eic-16-fullscreen%3C/title%3E%3Cg id='ic-16-fullscreen' stroke='none' stroke-width='1' fill='none' fill-rule='evenodd'%3E%3Cpath d='M3,11.5 C3,11.776 3.224,12 3.5,12 L12.5,12 C12.776,12 13,11.776 13,11.5 L13,4.5 C13,4.224 12.776,4 12.5,4 L3.5,4 C3.224,4 3,4.224 3,4.5 L3,11.5 Z M14,11 L14,13 L12,13 C11.724,13 11.5,13.224 11.5,13.5 C11.5,13.776 11.724,14 12,14 L14.5,14 C14.776,14 15,13.776 15,13.5 L15,11 C15,10.724 14.776,10.5 14.5,10.5 C14.224,10.5 14,10.724 14,11 Z M12,2 C11.724,2 11.5,2.224 11.5,2.5 C11.5,2.776 11.724,3 12,3 L14,3 L14,5 C14,5.276 14.224,5.5 14.5,5.5 C14.776,5.5 15,5.276 15,5 L15,2.5 C15,2.224 14.776,2 14.5,2 L12,2 Z M2,13 L2,11 C2,10.724 1.776,10.5 1.5,10.5 C1.224,10.5 1,10.724 1,11 L1,13.5 C1,13.776 1.224,14 1.5,14 L4,14 C4.276,14 4.5,13.776 4.5,13.5 C4.5,13.224 4.276,13 4,13 L2,13 Z M1,2.5 C1,2.224 1.224,2 1.5,2 L4,2 C4.276,2 4.5,2.224 4.5,2.5 C4.5,2.776 4.276,3 4,3 L2,3 L2,5 C2,5.276 1.776,5.5 1.5,5.5 C1.224,5.5 1,5.276 1,5 L1,2.5 Z ' id='fill_1' fill='%23006fff'%3E%3C/path%3E%3C/g%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		border-color: transparent;
+		float: left;
+		color: #006fff;
+		padding-left: 50%;
+		padding: 0px 0px 0px 20px;
+		cursor:pointer;
+		background-position: left bottom;
+		margin-left: 2px;
+	}
+	.link {
+		text-align: right;
+		color: #4e5258;
+		margin-right: 2px;
+	}
+	a {
+		font-weight: 600;
+		color: #006fff;
+		text-decoration: none;
+	}
+	.link, .button {
+		font-family: sans-serif;
+		font-size: 14px;
+		font-weight: normal;
+		font-style: normal;
+		font-stretch: normal;
+		line-height: normal;
+		letter-spacing: 0px;
+		padding-top: 12px;
+	}
+
+	.buttons-background {
+		background-color: #ffffff;
+		width: 100%;
+		height: 42px;
+	}
+
+	body {
+		background-color: #ffffff;
+	}
+
+	.canvas-app-container {
+		background: rgba(250,252,255,1);
+		background: -moz-linear-gradient(-45deg, rgba(250,252,255,1) 0%, rgba(250,252,255,1) 50%, rgba(245,249,255,1) 50%, rgba(245,249,255,1) 100%);
+		background: -webkit-gradient(left top, right bottom, color-stop(0%, rgba(250,252,255,1)), color-stop(50%, rgba(250,252,255,1)), color-stop(50%, rgba(245,249,255,1)), color-stop(100%, rgba(245,249,255,1)));
+		background: -webkit-linear-gradient(-45deg, rgba(250,252,255,1) 0%, rgba(250,252,255,1) 50%, rgba(245,249,255,1) 50%, rgba(245,249,255,1) 100%);
+		background: -o-linear-gradient(-45deg, rgba(250,252,255,1) 0%, rgba(250,252,255,1) 50%, rgba(245,249,255,1) 50%, rgba(245,249,255,1) 100%);
+		background: -ms-linear-gradient(-45deg, rgba(250,252,255,1) 0%, rgba(250,252,255,1) 50%, rgba(245,249,255,1) 50%, rgba(245,249,255,1) 100%);
+		background: linear-gradient(135deg, rgba(250,252,255,1) 0%, rgba(250,252,255,1) 50%, rgba(245,249,255,1) 50%, rgba(245,249,255,1) 100%);
+		filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fafcff', endColorstr='#f5f9ff', GradientType=1 );
+	}
+
+	.canvas-app-canvas {
+		background-repeat:no-repeat;
+		background-position: center center;
+		background-size: 70%;
+		background-image: url("data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3Csvg version='1.1' id='Layer_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' width='300px' height='64px' viewBox='-2467.5 2469 300 64' style='enable-background:new -2467.5 2469 300 64;' xml:space='preserve'%3E%3Cstyle type='text/css'%3E .st0%7Bfill:%2315244A;%7D .st1%7Bfill:url(%23SVGID_1_);%7D .st2%7Bfill:url(%23SVGID_2_);%7D%0A%3C/style%3E%3Ctitle%3Edefold-logo-html5-splash%3C/title%3E%3Cpolygon class='st0' points='-2177,2482.9 -2175.5,2482.9 -2175.5,2486.7 -2174.4,2486.7 -2174.4,2482.9 -2173.2,2482.9 -2173.2,2481.9 -2177,2481.9 '/%3E%3Cpolygon class='st0' points='-2169.8,2484.1 -2171,2482.1 -2172.1,2482.1 -2172.1,2486.7 -2171,2486.7 -2171,2483.5 -2169.7,2485.6 -2169.7,2485.6 -2168.5,2483.5 -2168.5,2486.7 -2167.5,2486.7 -2167.5,2482.1 -2168.6,2482.1 '/%3E%3Cpath class='st0' d='M-2376,2482h-13.8v38h13.6c6.6,0,12.2-1.9,16.1-5.5c3.8-3.5,5.8-8.5,5.7-13.7v-0.1 C-2354.5,2489.3-2362.9,2482-2376,2482z M-2364,2501.2c0,6.7-4.5,10.9-11.8,10.9h-4.7v-22h4.7c7.3,0,11.8,4.2,11.8,10.9 L-2364,2501.2z'/%3E%3Cpolygon class='st0' points='-2340.9,2505 -2325.1,2505 -2325.1,2497.4 -2340.9,2497.4 -2340.9,2489.6 -2322.4,2489.6 -2322.4,2481.9 -2350.1,2481.9 -2350.1,2520 -2322.2,2520 -2322.2,2512.4 -2340.9,2512.4 '/%3E%3Cpolygon class='st0' points='-2317.1,2481.9 -2317.1,2520 -2307.9,2520 -2307.9,2505.9 -2293,2505.9 -2293,2498.4 -2307.9,2498.4 -2307.9,2489.9 -2289.6,2489.9 -2289.6,2481.9 '/%3E%3Cpolygon class='st0' points='-2233,2482.1 -2242.2,2482.1 -2242.2,2520 -2216.3,2520 -2216.3,2512.2 -2233,2512.2 '/%3E%3Cpath class='st0' d='M-2197.1,2482h-13.7v38h13.5c6.7,0,12.2-1.9,16.1-5.5c3.8-3.5,5.8-8.5,5.7-13.7v-0.1 C-2175.5,2489.3-2184,2482-2197.1,2482z M-2185.1,2501.2c0,6.7-4.5,10.9-11.8,10.9h-4.7v-22h4.7c7.3,0,11.8,4.2,11.8,10.9V2501.2z' /%3E%3Cpath class='st0' d='M-2267.5,2481.7c-10.8,0-19.6,8.8-19.6,19.7c0,10.8,8.8,19.6,19.7,19.6c10.8,0,19.6-8.8,19.6-19.6l0,0 C-2247.8,2490.5-2256.6,2481.7-2267.5,2481.7C-2267.5,2481.7-2267.5,2481.7-2267.5,2481.7z M-2258,2507.9l-8.8,5.1 c-0.5,0.3-1.2,0.3-1.8,0l-8.8-5.1c-0.5-0.3-0.9-0.9-0.9-1.5v-10.2c0-0.6,0.3-1.2,0.9-1.5l8.8-5.1c0.5-0.3,1.2-0.3,1.8,0l8.8,5.1 c0.5,0.3,0.9,0.9,0.9,1.5v10.2C-2257.1,2507-2257.4,2507.6-2258,2507.9z'/%3E%3Cpath class='st0' d='M-2423.2,2494.6l-11.1,6.4l-11.1-6.4l11.1-6.4L-2423.2,2494.6z M-2412.1,2501v12.8l11.1-6.4L-2412.1,2501z M-2467.5,2507.4l11.1,6.4V2501L-2467.5,2507.4z M-2434.3,2526.6l11.1,6.4l11.1-6.4l-11.1-6.4l11.1-6.4l-11.1-6.4l-11.1,6.4 l-11.1-6.4l-11.1,6.4l11.1,6.4l-11.1,6.4l11.1,6.4L-2434.3,2526.6z'/%3E%3ClinearGradient id='SVGID_1_' gradientUnits='userSpaceOnUse' x1='-2451.2178' y1='2525.4604' x2='-2406.2178' y2='2499.6304' gradientTransform='matrix(1 0 0 -1 0 5004)'%3E%3Cstop offset='0' style='stop-color:%231C68EC'/%3E%3Cstop offset='1' style='stop-color:%2300E9DF'/%3E%3C/linearGradient%3E%3Cpath class='st1' d='M-2412.1,2513.8v12.8l-11.1-6.4L-2412.1,2513.8z M-2434.3,2513.8V2501l-11.1-6.4v12.8L-2434.3,2513.8z M-2445.4,2469v12.8l11.1-6.4L-2445.4,2469z M-2412.1,2488.2L-2412.1,2488.2 M-2423.2,2507.4l11.1,6.4V2501l11.1,6.4v-12.8 l-11.1-6.4v-12.8l0,0l-11.1-6.4v12.8l-11.1-6.4v12.8l11.1,6.4V2507.4z'/%3E%3ClinearGradient id='SVGID_2_' gradientUnits='userSpaceOnUse' x1='-2465.9385' y1='2521.2493' x2='-2423.5085' y2='2496.7893' gradientTransform='matrix(1 0 0 -1 0 5004)'%3E%3Cstop offset='0' style='stop-color:%23FF3C2A'/%3E%3Cstop offset='1' style='stop-color:%23FFD215'/%3E%3C/linearGradient%3E%3Cpath class='st2' d='M-2434.3,2513.8V2501l11.1-6.4v12.8L-2434.3,2513.8z M-2434.3,2475.4l11.1,6.4V2469L-2434.3,2475.4z M-2456.5,2488.2L-2456.5,2488.2 M-2445.4,2494.6l11.1-6.4v-12.8l-11.1,6.4V2469l-11.1,6.4l0,0v12.8l-11.1,6.4v12.8l11.1-6.4v12.8 l11.1-6.4V2494.6z M-2456.5,2513.8v12.8l11.1-6.4L-2456.5,2513.8z'/%3E%3C/svg%3E%0A");
+	}
+	</style>
+    <!-- PeerJS + QR (qrcode/jsQR) CDNs + bridges injetados pelo build_html5.ps1 -->
+    <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script>
+// peerjs_bridge.js
+// Bridge entre o Defold Lua (via html5.run) e a biblioteca PeerJS.
+// Lua NUNCA importa PeerJS diretamente: chama html5.run("PEERJS.*()").
+// JS mantem um buffer de eventos que Lua poleia a cada frame via html5.run.
+//
+// API exposta para Lua (todas as funcoes sao no objeto global PEERJS):
+//
+//   PEERJS.init(hostOrCfg)
+//     hostOrCfg: "" ou "cloud" -> usa cloud.peerjs.com (sem servidor proprio)
+//                "IP:PORT:PATH" -> usa servidor local, ex "127.0.0.1:9000:/peerjs"
+//     Cria o objeto Peer com ID aleatorio. Quando o ID estiver pronto, empurra
+//     evento { t:"open", id:"..." } no buffer.
+//
+//   PEERJS.connect(peerId)
+//     Abre uma DataConnection confiavel para peerId.
+//     Evento de sucesso: { t:"conn_open", id:peerId }
+//
+//   PEERJS.send(peerId, msg)
+//     Envia string msg para a conexao aberta com peerId.
+//
+//   PEERJS.broadcast(msg)
+//     Envia string msg para TODAS as conexoes abertas.
+//
+//   PEERJS.poll()
+//     Retorna e limpa o buffer de eventos como JSON string.
+//     Lua chama isso a cada frame.
+//     Formato: "[{t,id,msg},...] " ou "[]"
+//
+//   PEERJS.my_id()
+//     Retorna o ID deste peer como string, ou "" se ainda nao inicializado.
+//
+//   PEERJS.destroy()
+//     Fecha todas as conexoes e destroi o peer.
+//
+// Eventos no buffer (campo t):
+//   "open"       { t, id }           - peer pronto, id atribuido
+//   "conn_open"  { t, id }           - conexao com peer "id" aberta (iniciador)
+//   "conn_in"    { t, id }           - peer "id" nos conectou (receptor)
+//   "conn_close" { t, id }           - conexao com "id" fechada
+//   "conn_err"   { t, id, msg }      - erro na conexao com "id"
+//   "data"       { t, id, msg }      - mensagem recebida de "id"
+//   "error"      { t, msg }          - erro geral do peer
+//   "destroyed"  { t }               - peer destruido
+
+(function () {
+  var _peer = null;
+  var _conns = {};   // peerId -> DataConnection
+  var _buf  = [];    // fila de eventos para o Lua
+  var _wake_installed = false;
+
+  // SOT (lado JS) do contrato de camadas dos overlays sobre o canvas. O QR do
+  // qr_bridge.js usa z=90/top=62%; aqui ficam os do peerjs_bridge. Mantidos
+  // juntos para a ordem de empilhamento ser legivel num lugar so.
+  var OVERLAY = {
+    z_myid:    100,    // div do proprio ID (acima do QR)
+    myid_top:  "34.4%" // ancora vertical do div do ID sobre o canvas
+  };
+
+  // Idiom compartilhado: resolve o elemento que hospeda overlays absolutos
+  // sobre o canvas do jogo (garante position:relative no pai).
+  function overlay_host() {
+    var canvas = document.getElementById("canvas");
+    if (!canvas) return null;
+    var host = canvas.parentNode || document.body;
+    if (canvas.parentNode) canvas.parentNode.style.position = "relative";
+    return host;
+  }
+
+  function push(evt) { _buf.push(evt); }
+
+  // Empurra um evento "wake" quando o app volta ao foco/visivel/online. O Lua
+  // usa isso para reabrir a conexao apos lock screen / troca de app / queda de
+  // rede (o browser suspende o JS e os datachannels caem em background).
+  function install_wake_listeners() {
+    if (_wake_installed) return;
+    _wake_installed = true;
+    var fire = function (src) { push({ t: "wake", src: String(src) }); };
+    try {
+      document.addEventListener("visibilitychange", function () {
+        if (!document.hidden) fire("visible");
+      });
+      window.addEventListener("focus", function () { fire("focus"); });
+      window.addEventListener("online", function () { fire("online"); });
+      window.addEventListener("pageshow", function () { fire("pageshow"); });
+    } catch (e) {}
+  }
+
+  // Converte o payload do datachannel (string | ArrayBuffer | TypedArray) para
+  // texto. Com serialization "raw" o PeerJS pode entregar binario; sem isto o
+  // STATE "S|..." chegava como "[object ArrayBuffer]" e o spoke congelava.
+  function to_text(raw) {
+    if (typeof raw === "string") return raw;
+    try {
+      var bytes = null;
+      if (raw instanceof ArrayBuffer) {
+        bytes = new Uint8Array(raw);
+      } else if (raw && raw.buffer instanceof ArrayBuffer) {
+        // TypedArray (ex Uint8Array) ou DataView
+        bytes = new Uint8Array(raw.buffer, raw.byteOffset || 0, raw.byteLength);
+      }
+      if (bytes) {
+        if (typeof TextDecoder !== "undefined") {
+          return new TextDecoder("utf-8").decode(bytes);
+        }
+        var s = "";
+        for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+        return s;
+      }
+    } catch (e) {}
+    return String(raw);
+  }
+
+  function wire_conn(conn, incoming) {
+    var rid = conn.peer;
+
+    // Se ja existe uma conn aberta com este peer (ex: ambos conectaram um ao outro),
+    // descarta a duplicata para evitar loop de eventos.
+    if (_conns[rid] && _conns[rid].open) return;
+
+    _conns[rid] = conn;
+    if (incoming) push({ t: "conn_in", id: rid });
+
+    // Para incoming connections o evento "open" as vezes ja disparou antes de
+    // wire_conn ser chamado (race condition no PeerJS). Verificamos conn.open
+    // imediatamente e emitimos conn_open se ja estiver aberta.
+    if (conn.open) {
+      push({ t: "conn_open", id: rid });
+    } else {
+      conn.on("open", function () {
+        push({ t: "conn_open", id: rid });
+      });
+    }
+
+    conn.on("data", function (raw) {
+      // Com serialization "raw" o datachannel pode entregar a mensagem como
+      // ArrayBuffer / TypedArray (modo binario) e nao como string. String(raw)
+      // viraria "[object ArrayBuffer]" e o decode falharia. Convertendo aqui
+      // para texto UTF-8 garantimos que "S|..." chegue intacto no Lua.
+      var msg = to_text(raw);
+      push({ t: "data", id: rid, msg: msg });
+    });
+    conn.on("close", function () {
+      delete _conns[rid];
+      push({ t: "conn_close", id: rid });
+    });
+    conn.on("error", function (err) {
+      delete _conns[rid];
+      push({ t: "conn_err", id: rid, msg: String(err) });
+    });
+  }
+
+  window.PEERJS = {
+
+    init: function (hostOrCfg) {
+      if (_peer) { _peer.destroy(); _peer = null; _conns = {}; _buf = []; }
+
+      var opts = { debug: 0 };
+
+      var s = String(hostOrCfg || "").trim();
+      if (s !== "" && s !== "cloud") {
+        // formato "host:port:path"  ex "127.0.0.1:9000:/peerjs"
+        var parts = s.split(":");
+        // host pode conter "." mas nao ":", port e numero, path comeca com /
+        // separamos por ":" mas o path pode ter "/" entao usamos split limitado
+        // "127.0.0.1:9000:/peerjs" -> ["127.0.0.1","9000","","peerjs"]
+        // Melhor: dividir em no maximo 3 partes
+        var idx1 = s.indexOf(":");
+        var idx2 = s.indexOf(":", idx1 + 1);
+        var h = s.substring(0, idx1);
+        var p = idx2 > idx1 ? s.substring(idx1 + 1, idx2) : s.substring(idx1 + 1);
+        var path = idx2 > idx1 ? s.substring(idx2 + 1) : "/peerjs";
+        opts.host = h;
+        opts.port = parseInt(p, 10) || 9000;
+        opts.path = path || "/peerjs";
+        opts.secure = false;
+      }
+
+      _peer = new Peer(undefined, opts);
+
+      _peer.on("open", function (id) {
+        push({ t: "open", id: id });
+      });
+      _peer.on("connection", function (conn) {
+        wire_conn(conn, true);
+      });
+      _peer.on("error", function (err) {
+        push({ t: "error", msg: String(err) });
+      });
+      _peer.on("disconnected", function () {
+        // Perda do servidor de signaling (ex: app suspenso/lock screen).
+        // O Lua decide reconectar (PEERJS.reconnect_peer / connect novamente).
+        push({ t: "peer_disconnected" });
+      });
+      _peer.on("close", function () {
+        push({ t: "destroyed" });
+      });
+
+      install_wake_listeners();
+    },
+
+    // Reconecta o Peer ao servidor de signaling sem trocar de id. Usado quando
+    // o app volta do background e o socket de signaling caiu (disconnected).
+    reconnect_peer: function () {
+      if (!_peer) return false;
+      if (_peer.destroyed) return false;
+      try {
+        if (_peer.disconnected) { _peer.reconnect(); return true; }
+      } catch (e) {}
+      return false;
+    },
+
+    connect: function (peerId) {
+      if (!_peer) return;
+      // serialization "json": SEMPRE entrega string nas duas pontas (faz
+      // JSON.stringify/parse), entao "S|..." nunca chega como ArrayBuffer.
+      // Com "raw" o datachannel entregava binario e o spoke congelava. O
+      // overhead extra a 20Hz com strings curtas e desprezivel. O to_text()
+      // no on("data") continua como cinto de seguranca.
+      var conn = _peer.connect(String(peerId), { reliable: true, serialization: "json" });
+      wire_conn(conn, false);
+    },
+
+    send: function (peerId, msg) {
+      var c = _conns[String(peerId)];
+      if (c && c.open) { try { c.send(String(msg)); } catch(e) {} }
+    },
+
+    broadcast: function (msg) {
+      var s = String(msg);
+      for (var id in _conns) {
+        var c = _conns[id];
+        if (c && c.open) { try { c.send(s); } catch(e) {} }
+      }
+    },
+
+    poll: function () {
+      if (_buf.length === 0) return "[]";
+      var out = JSON.stringify(_buf);
+      _buf = [];
+      return out;
+    },
+
+    my_id: function () {
+      return (_peer && _peer.id) ? _peer.id : "";
+    },
+
+    // numero de DataConnections ABERTAS. Usado por testes (e diagnostico) para
+    // saber se o canal realmente linkou.
+    open_count: function () {
+      var n = 0;
+      for (var id in _conns) { if (_conns[id] && _conns[id].open) n++; }
+      return n;
+    },
+
+    // (FULL MESH) ids dos peers com DataConnection ABERTA, como array JSON de
+    // strings. Puro: nao muta nada. O Lua usa para reconciliar a malha (detecta
+    // conns que escaparam de um evento conn_open/conn_in perdido sob carga).
+    peer_ids: function () {
+      var out = [];
+      for (var id in _conns) { if (_conns[id] && _conns[id].open) out.push(id); }
+      return JSON.stringify(out);
+    },
+
+    // Mostra o proprio ID num <div> clicavel (copia ao clicar) sobre o canvas.
+    // O DOM-builder vive aqui (e nao numa string inline gigante no Lua); o Lua
+    // chama PEERJS.show_myid(id) em uma linha, igual ao QR.show_generator.
+    show_myid: function (text) {
+      var t = String(text);
+      var old = document.getElementById("peerjs_myid_div");
+      if (old) old.remove();
+      var host = overlay_host();
+      if (!host) return;
+      var d = document.createElement("div");
+      d.id = "peerjs_myid_div";
+      d.textContent = t;
+      d.title = "Clique para copiar o ID";
+      d.style.cssText = [
+        "position:absolute;", "left:50%;", "top:" + OVERLAY.myid_top + ";",
+        "transform:translate(-50%,-50%);",
+        "background:rgba(20,20,40,0.82);", "color:#7cf;",
+        "font:bold 13px monospace;", "padding:4px 10px;",
+        "border-radius:6px;", "cursor:pointer;",
+        "user-select:all;", "-webkit-user-select:all;",
+        "letter-spacing:1px;", "pointer-events:auto;",
+        "z-index:" + OVERLAY.z_myid + ";"
+      ].join("");
+      d.addEventListener("click", function () {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(t).then(function () {
+            d.textContent = "copiado!";
+            setTimeout(function () { d.textContent = t; }, 1200);
+          });
+        } else {
+          var r = document.createRange();
+          r.selectNode(d);
+          window.getSelection().removeAllRanges();
+          window.getSelection().addRange(r);
+        }
+      });
+      host.appendChild(d);
+    },
+
+    destroy: function () {
+      if (_peer) { _peer.destroy(); _peer = null; }
+      _conns = {}; _buf = [];
+    }
+  };
+
+  // ── MESHUI: espelho DOM test-observavel + controles DOM (para o gate) ────────
+  // O jogo continua sendo a GBC handheld desenhada no canvas Defold (humanos). O
+  // MESHUI e um ESPELHO minimo do estado test-observavel para o Playwright: ele
+  // LE texto DOM por getByTestId(...) e CLICA <button>s reais, entao NAO ha tap no
+  // canvas, NAO ha matematica de coordenada com letterbox, NAO ha dependencia de
+  // input WebGL. Os botoes so SETAM flags que o Lua poleia (flag-poll, igual ao
+  // gametest3 / L-MESH6-02); o Defold segue dono da malha + simulacao. Glue de UI
+  // (excecao documentada do seam, L-PEERJS-12), igual ao QR/show_myid.
+  //
+  // Testids expostos (estaveis; o executor escreve o gate contra eles):
+  //   self-id        : id deste peer (em repouso = exatamente o id)
+  //   peer-count     : numero de peers na malha (= N quando completa)
+  //   mesh-status    : "peers: M/N" / "mesh completa: N peers" (cosmetico)
+  //   connect        : botao CONNECT  -> flag _connectPressed
+  //   join-input     : input do id do peer a entrar
+  //   join           : botao JOIN     -> flag _joinId
+  //   discover       : botao DISCOVER -> flag _discoverPressed
+  //   copy-id        : botao Copy id
+  //   dpad-up/down/left/right : direcao deste peer -> flag _dir (1..4)
+  //   btn-a          : USE POWERUP    -> flag _btnA (pulso de 1 frame)
+  //   btn-b          : reservado      -> flag _btnB (pulso; bit reservado)
+  //   snake-<id>     : no de presenca, existe quando o snake do peer <id> esta no
+  //                    mundo (o gate confere que todo peer ve todos os N snakes)
+
+  function overlay_host() {
+    var canvas = document.getElementById("canvas");
+    if (!canvas) return document.body;
+    var host = canvas.parentNode || document.body;
+    if (canvas.parentNode) canvas.parentNode.style.position = "relative";
+    return host;
+  }
+
+  // direcoes (small ints) espelham config.dir: UP=1 DOWN=2 LEFT=3 RIGHT=4.
+  var DIR = { up: 1, down: 2, left: 3, right: 4 };
+
+  window.MESHUI = {
+    // flags poladas pelo Lua. Os botoes SETAM; o Lua LE+LIMPA.
+    _connectPressed: false,
+    _joinId: "",
+    _discoverPressed: false,
+    _dir: 0,        // ultima direcao DOM apertada (1..4), held ate trocar
+    _btnA: false,   // USE POWERUP (pulso de 1 frame)
+    _btnB: false,   // reservado (pulso de 1 frame)
+    _built: false,
+    _selfId: "",
+
+    copy_self_id: function () {
+      var id = String(this._selfId || "");
+      if (id === "") return false;
+      var done = function () {
+        var el = document.getElementById("self_id");
+        if (!el) return;
+        el.textContent = "copiado!";
+        setTimeout(function () { el.textContent = id; }, 1000);
+      };
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(id).then(done, function () { done(); });
+          return true;
+        }
+      } catch (e) {}
+      try {
+        var el = document.getElementById("self_id");
+        if (el) {
+          var r = document.createRange();
+          r.selectNodeContents(el);
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(r);
+        }
+      } catch (e2) {}
+      return false;
+    },
+
+    // Constroi o painel DOM (controles + espelho) uma vez (idempotente).
+    init: function () {
+      if (this._built && document.getElementById("mesh_panel")) return;
+      var host = overlay_host();
+      if (!host) return;
+      var old = document.getElementById("mesh_panel");
+      if (old) old.remove();
+      var self = this;
+
+      var panel = document.createElement("div");
+      panel.id = "mesh_panel";
+      panel.style.cssText = [
+        "position:absolute;", "left:8px;", "top:8px;",
+        "z-index:1000;", "pointer-events:auto;",
+        "font:12px monospace;", "color:#dde;",
+        "background:rgba(12,14,20,0.85);", "padding:8px;",
+        "border-radius:6px;", "min-width:240px;"
+      ].join("");
+
+      // linha de controles principais
+      var controls = document.createElement("div");
+      controls.style.cssText = "margin-bottom:6px;";
+
+      function mkbtn(id, testid, label, onclick, title) {
+        var b = document.createElement("button");
+        b.id = id;
+        b.setAttribute("data-testid", testid);
+        b.textContent = label;
+        b.style.cssText = "margin:0 4px 4px 0;";
+        if (title) b.title = title;
+        b.addEventListener("click", onclick);
+        return b;
+      }
+
+      controls.appendChild(mkbtn("btn_connect", "connect", "CONNECT",
+        function () { self._connectPressed = true; }));
+      controls.appendChild(mkbtn("btn_discover", "discover", "DISCOVER",
+        function () { self._discoverPressed = true; },
+        "re-sync: acha e conecta peers ainda fora da malha"));
+
+      // linha de JOIN: input + botao
+      var joinRow = document.createElement("div");
+      joinRow.style.cssText = "margin-bottom:6px;";
+      var joinInput = document.createElement("input");
+      joinInput.id = "join_id";
+      joinInput.setAttribute("data-testid", "join-input");
+      joinInput.type = "text";
+      joinInput.placeholder = "id de outro peer";
+      joinInput.style.cssText = "width:150px;margin-right:4px;";
+      var btnJoin = mkbtn("btn_join", "join", "JOIN", function () {
+        var v = String(joinInput.value || "").trim();
+        if (v !== "") self._joinId = v;
+      });
+      joinRow.appendChild(joinInput);
+      joinRow.appendChild(btnJoin);
+
+      // linha do self id (clique copia) + botao Copy
+      var selfLine = document.createElement("div");
+      selfLine.style.cssText = "margin-bottom:4px;display:flex;align-items:center;gap:6px;";
+      var selfLabel = document.createElement("span");
+      selfLabel.textContent = "self: ";
+      var selfVal = document.createElement("span");
+      selfVal.id = "self_id";
+      selfVal.setAttribute("data-testid", "self-id");
+      selfVal.textContent = "";
+      selfVal.title = "clique para copiar seu id";
+      selfVal.style.cssText = [
+        "cursor:pointer;", "user-select:all;", "-webkit-user-select:all;",
+        "color:#7cf;", "background:rgba(40,44,60,0.6);",
+        "padding:1px 5px;", "border-radius:4px;",
+        "max-width:160px;", "overflow:hidden;", "text-overflow:ellipsis;",
+        "white-space:nowrap;", "display:inline-block;", "vertical-align:middle;"
+      ].join("");
+      selfVal.addEventListener("click", function () { self.copy_self_id(); });
+      var btnCopy = mkbtn("btn_copy_id", "copy-id", "Copy",
+        function () { self.copy_self_id(); }, "copia seu id");
+      selfLine.appendChild(selfLabel);
+      selfLine.appendChild(selfVal);
+      selfLine.appendChild(btnCopy);
+
+      // linha peer-count
+      var countLine = document.createElement("div");
+      countLine.style.cssText = "margin-bottom:4px;";
+      var countLabel = document.createElement("span");
+      countLabel.textContent = "peers: ";
+      var countVal = document.createElement("span");
+      countVal.id = "peer_count";
+      countVal.setAttribute("data-testid", "peer-count");
+      countVal.textContent = "0";
+      countLine.appendChild(countLabel);
+      countLine.appendChild(countVal);
+
+      // linha de status legivel da malha (cosmetico, NAO e testid do gate decisivo)
+      var meshStatus = document.createElement("div");
+      meshStatus.id = "mesh_status";
+      meshStatus.setAttribute("data-testid", "mesh-status");
+      meshStatus.style.cssText = "margin-bottom:4px;color:#fd6;font-size:12px;font-weight:bold;";
+      meshStatus.textContent = "mesh: 0/0";
+
+      // linha de autoridade (cosmetico) + score do proprio peer
+      var authLine = document.createElement("div");
+      authLine.id = "auth_line";
+      authLine.setAttribute("data-testid", "auth-line");
+      authLine.style.cssText = "margin-bottom:4px;color:#9c9;font-size:11px;";
+      authLine.textContent = "authority: ?";
+
+      // D-pad DOM (cruz) + A/B: controles test-observaveis do steering deste peer
+      var dpadRow = document.createElement("div");
+      dpadRow.style.cssText = "margin-bottom:4px;";
+      dpadRow.appendChild(mkbtn("dpad_up", "dpad-up", "UP",
+        function () { self._dir = DIR.up; }));
+      dpadRow.appendChild(mkbtn("dpad_down", "dpad-down", "DOWN",
+        function () { self._dir = DIR.down; }));
+      dpadRow.appendChild(mkbtn("dpad_left", "dpad-left", "LEFT",
+        function () { self._dir = DIR.left; }));
+      dpadRow.appendChild(mkbtn("dpad_right", "dpad-right", "RIGHT",
+        function () { self._dir = DIR.right; }));
+
+      var abRow = document.createElement("div");
+      abRow.style.cssText = "margin-bottom:4px;";
+      abRow.appendChild(mkbtn("btn_a", "btn-a", "A (use)",
+        function () { self._btnA = true; }, "A = USE POWERUP"));
+      abRow.appendChild(mkbtn("btn_b", "btn-b", "B",
+        function () { self._btnB = true; }, "B = reservado"));
+
+      // container de presenca dos snakes (1 no por peer, snake-<id>)
+      var mesh = document.createElement("div");
+      mesh.id = "mesh";
+
+      panel.appendChild(controls);
+      panel.appendChild(joinRow);
+      panel.appendChild(selfLine);
+      panel.appendChild(countLine);
+      panel.appendChild(meshStatus);
+      panel.appendChild(authLine);
+      panel.appendChild(dpadRow);
+      panel.appendChild(abRow);
+      panel.appendChild(mesh);
+      host.appendChild(panel);
+
+      this._built = true;
+    },
+
+    // O Lua chama por frame com a presenca dos snakes do mundo COMPARTILHADO como
+    // JSON {"<id>":{"s":score,"hx":headx,"hy":heady,"len":n},...} + o id deste peer.
+    // Cria/atualiza um no por peer data-testid="snake-<id>" e atualiza self-id +
+    // peer-count. O gate confere que TODO peer tem um snake-<id> para os N ids
+    // (mundo visivel em todos) e que peer-count == N. Para INPUT SYNC, cada no
+    // carrega a cabeca (data-hx/data-hy) e o tamanho (data-len) do snake daquele
+    // peer: apos clicar dpad-* no peer k, a cabeca de snake-<idk> muda e isso e
+    // visivel em TODO peer. O TEXTO do no e "score|hx,hy" (legivel + asserivel).
+    // Compat: aceita tambem o formato antigo {"<id>":<int>} (valor inteiro = score).
+    render: function (jsonWorld, selfId) {
+      this.init();
+      var map = {};
+      try { map = JSON.parse(jsonWorld || "{}") || {}; } catch (e) { map = {}; }
+
+      var mesh = document.getElementById("mesh");
+      if (!mesh) return;
+
+      this._selfId = String(selfId || "");
+      var selfVal = document.getElementById("self_id");
+      if (selfVal && selfVal.textContent !== "copiado!") {
+        selfVal.textContent = this._selfId;
+      }
+
+      var ids = Object.keys(map);
+      var countVal = document.getElementById("peer_count");
+      if (countVal) countVal.textContent = String(ids.length);
+
+      var present = {};
+      for (var i = 0; i < ids.length; i++) {
+        var id = ids[i];
+        present[id] = true;
+        var v = map[id];
+        var score, hx, hy, len, dir;
+        if (v && typeof v === "object") {
+          score = v.s | 0; hx = (v.hx == null ? -1 : v.hx | 0);
+          hy = (v.hy == null ? -1 : v.hy | 0); len = v.len | 0;
+          dir = v.d | 0;
+        } else {
+          score = v | 0; hx = -1; hy = -1; len = 0; dir = 0;
+        }
+        var nodeId = "snake-" + id;
+        var row = document.getElementById(nodeId);
+        if (!row) {
+          row = document.createElement("div");
+          row.id = nodeId;
+          row.className = "snake";
+          row.setAttribute("data-testid", "snake-" + id);
+          row.setAttribute("data-peer", id);
+          row.title = String(id).slice(0, 8);
+          mesh.appendChild(row);
+        }
+        row.setAttribute("data-hx", String(hx));
+        row.setAttribute("data-hy", String(hy));
+        row.setAttribute("data-len", String(len));
+        row.setAttribute("data-score", String(score));
+        row.setAttribute("data-dir", String(dir));   // 1=UP 2=DOWN 3=LEFT 4=RIGHT
+        // texto observavel: "score|hx,hy|dir" (presenca + cabeca + direcao).
+        row.textContent = String(score) + "|" + hx + "," + hy + "|" + dir;
+      }
+      var rows = mesh.querySelectorAll(".snake");
+      for (var j = 0; j < rows.length; j++) {
+        var pid = rows[j].getAttribute("data-peer");
+        if (!present[pid]) rows[j].remove();
+      }
+    },
+
+    // O Lua poleia por frame: devolve as acoes pendentes como JSON e LIMPA os
+    // pulsos (A/B/connect/join/discover). _dir e HELD (mantido ate trocar), pois a
+    // direcao do snake persiste; A/B/connect/join/discover sao pulsos de 1 frame.
+    poll_controls: function () {
+      var out = {
+        connect: this._connectPressed === true,
+        join: String(this._joinId || ""),
+        discover: this._discoverPressed === true,
+        dir: this._dir | 0,
+        a: this._btnA === true,
+        b: this._btnB === true
+      };
+      this._connectPressed = false;
+      this._joinId = "";
+      this._discoverPressed = false;
+      this._btnA = false;
+      this._btnB = false;
+      return JSON.stringify(out);
+    },
+
+    // O Lua empurra o status legivel da malha + a autoridade por frame (cosmetico).
+    set_mesh_status: function (text, authority) {
+      this.init();
+      var el = document.getElementById("mesh_status");
+      if (el) el.textContent = String(text == null ? "" : text);
+      var a = document.getElementById("auth_line");
+      if (a) a.textContent = "authority: " + String(authority == null ? "?" : authority);
+      return true;
+    }
+  };
+})();
+
+    </script>
+    <script>
+// qr_bridge.js
+// Bridge entre o Defold Lua (via html5.run) e as libs de QR code:
+//   - qrcode (geracao): https://github.com/soldair/node-qrcode (browser build)
+//   - jsQR   (leitura) : https://github.com/cozmo/jsQR
+// Ambas sao injetadas por CDN no build_html5.ps1.
+//
+// API exposta para Lua (objeto global QR):
+//
+//   QR.show_generator(text)
+//     Desenha um QR de `text` (o ID do HUB) num <div> sobreposto ao canvas.
+//
+//   QR.hide_generator()
+//     Remove o QR sobreposto. (O bridge e stateless: o Lua decide quando
+//     mostrar/esconder via qr_should_show + reconciliacao por frame.)
+//
+//   QR.start_scan()
+//     Abre a camera (getUserMedia) e comeca a decodificar frames com jsQR.
+//     Exige HTTPS ou localhost; em http via IP o browser bloqueia a camera.
+//     Mostra um overlay de video em tela cheia com um botao fechar.
+//
+//   QR.stop_scan()
+//     Para a leitura e fecha a camera/overlay.
+//
+//   QR.poll_scan()
+//     Lua poleia a cada frame. Retorna:
+//       ""                  -> nada ainda (escaneando)
+//       "OK|<texto lido>"   -> leu um QR; texto = ID do HUB
+//       "ERR|<motivo>"      -> erro (ex camera negada / indisponivel)
+//       "CLOSED"            -> usuario fechou o scanner sem ler
+
+(function () {
+  var _scanResult = null;     // null = nada; senao string "OK|..","ERR|..","CLOSED"
+  var _stream = null;
+  var _raf = null;
+  var _video = null;
+  var _overlay = null;
+  var _canvas = null;
+  var _scanning = false;
+
+  function canvasEl() {
+    return document.getElementById("canvas");
+  }
+
+  // ── Gerador (STATELESS) ───────────────────────────────────────────────────
+  // O bridge NAO guarda "quero mostrar o QR?": quem decide isso e o Lua
+  // (qr_should_show). Aqui so desenhamos ou removemos o div quando mandado.
+
+  function QR_hide_generator() {
+    var old = document.getElementById("qr_gen_div");
+    if (old) old.remove();
+  }
+
+  // Desenha (ou re-desenha) o div do QR. Idempotente: remove o anterior antes.
+  function QR_show_generator(text) {
+    var old = document.getElementById("qr_gen_div");
+    if (old) old.remove();
+    if (typeof QRCode === "undefined") return;
+    var canvas = canvasEl();
+    var host = (canvas && (canvas.parentNode || document.body)) || document.body;
+    if (canvas && canvas.parentNode) canvas.parentNode.style.position = "relative";
+
+    var d = document.createElement("div");
+    d.id = "qr_gen_div";
+    d.title = "Aponte a camera do outro celular para este QR";
+    // No TOPO da tela e acima de tudo (z alto): "always display on top".
+    d.style.cssText = [
+      "position:absolute;", "left:50%;", "top:12px;",
+      "transform:translate(-50%,0);",
+      "background:#fff;", "padding:8px;", "border-radius:8px;",
+      "box-shadow:0 2px 10px rgba(0,0,0,0.4);",
+      "z-index:1000;", "pointer-events:none;"
+    ].join("");
+
+    host.appendChild(d);
+
+    // qrcodejs (davidshimjs): new QRCode(element, opts) cria um <canvas>/<img>
+    // do QR DENTRO de `element`. correctLevel M e robusto para o ID.
+    try {
+      // limpa qualquer conteudo anterior do container
+      while (d.firstChild) d.removeChild(d.firstChild);
+      new QRCode(d, {
+        text: String(text),
+        width: 180,
+        height: 180,
+        correctLevel: (QRCode.CorrectLevel ? QRCode.CorrectLevel.M : undefined)
+      });
+    } catch (e) {
+      d.remove();
+    }
+  }
+
+  // ── Leitor (camera + jsQR) ────────────────────────────────────────────────
+
+  function setResult(r) { _scanResult = r; }
+
+  function tick() {
+    if (!_scanning) return;
+    if (_video && _video.readyState === _video.HAVE_ENOUGH_DATA &&
+        typeof jsQR !== "undefined") {
+      var w = _video.videoWidth, h = _video.videoHeight;
+      if (w && h) {
+        _canvas.width = w; _canvas.height = h;
+        var ctx = _canvas.getContext("2d");
+        ctx.drawImage(_video, 0, 0, w, h);
+        var img = ctx.getImageData(0, 0, w, h);
+        var code = null;
+        try { code = jsQR(img.data, w, h, { inversionAttempts: "dontInvert" }); } catch (e) {}
+        if (code && code.data) {
+          setResult("OK|" + code.data);
+          QR_stop_scan();
+          return;
+        }
+      }
+    }
+    _raf = requestAnimationFrame(tick);
+  }
+
+  function QR_start_scan() {
+    if (_scanning) return;
+    _scanResult = null;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setResult("ERR|camera indisponivel (precisa de HTTPS)");
+      return;
+    }
+
+    // overlay com o video da camera + botao fechar
+    _overlay = document.createElement("div");
+    _overlay.id = "qr_scan_overlay";
+    _overlay.style.cssText = [
+      "position:fixed;", "inset:0;", "background:rgba(0,0,0,0.92);",
+      "z-index:9999;", "display:flex;", "flex-direction:column;",
+      "align-items:center;", "justify-content:center;"
+    ].join("");
+
+    _video = document.createElement("video");
+    _video.setAttribute("playsinline", "true");
+    _video.style.cssText = "max-width:92vw;max-height:74vh;border-radius:10px;";
+
+    var hint = document.createElement("div");
+    hint.textContent = "Aponte para o QR do HUB";
+    hint.style.cssText = "color:#cde;font:bold 16px sans-serif;margin:12px;";
+
+    var closeBtn = document.createElement("button");
+    closeBtn.textContent = "FECHAR";
+    closeBtn.style.cssText = [
+      "margin-top:14px;", "padding:12px 28px;", "font:bold 16px sans-serif;",
+      "background:#444;", "color:#fff;", "border:none;", "border-radius:8px;",
+      "cursor:pointer;"
+    ].join("");
+    closeBtn.addEventListener("click", function () {
+      setResult("CLOSED");
+      QR_stop_scan();
+    });
+
+    _overlay.appendChild(hint);
+    _overlay.appendChild(_video);
+    _overlay.appendChild(closeBtn);
+    document.body.appendChild(_overlay);
+
+    _canvas = document.createElement("canvas");
+
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" }, audio: false
+    }).then(function (stream) {
+      _stream = stream;
+      _video.srcObject = stream;
+      _video.play();
+      _scanning = true;
+      _raf = requestAnimationFrame(tick);
+    }).catch(function (err) {
+      setResult("ERR|" + (err && err.name ? err.name : "camera negada"));
+      QR_stop_scan();
+    });
+  }
+
+  function QR_stop_scan() {
+    _scanning = false;
+    if (_raf) { cancelAnimationFrame(_raf); _raf = null; }
+    if (_stream) {
+      try { _stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+      _stream = null;
+    }
+    if (_video) { try { _video.pause(); _video.srcObject = null; } catch (e) {} }
+    // Remove o overlay pela VARIAVEL e tambem por ID do DOM, caso a variavel
+    // tenha dessincronizado (era por isso que a camera/botao fechar ficavam na
+    // tela apos a leitura). Cinto e suspensorio.
+    if (_overlay) { try { _overlay.remove(); } catch (e) {} _overlay = null; }
+    var stray = document.getElementById("qr_scan_overlay");
+    if (stray) { try { stray.remove(); } catch (e) {} }
+    _video = null;
+    _canvas = null;
+  }
+
+  // INVARIANTE: todo retorno nao-vazio ("OK|..","ERR|..","CLOSED") DEVE ter ja
+  // chamado QR_stop_scan() (tick em OK, closeBtn em CLOSED, getUserMedia.catch
+  // em ERR). O Lua confia nisso e NAO chama stop_scan no poll. Se adicionar um
+  // novo tipo de resultado, garanta que ele tambem encerra o scan antes.
+  function QR_poll_scan() {
+    if (_scanResult === null) return "";
+    var r = _scanResult;
+    _scanResult = null;
+    return r;
+  }
+
+  window.QR = {
+    show_generator:   QR_show_generator,
+    hide_generator:   QR_hide_generator,
+    start_scan:       QR_start_scan,
+    stop_scan:        QR_stop_scan,
+    poll_scan:        QR_poll_scan
+  };
+})();
+
+    </script>
+</head>
+
+<body>
+
+	<div id="app-container" class="canvas-app-container">
+		<div id="running-from-file-warning" style="display: none; margin: 3em;">
+			<h1>Running from local file ⚠️</h1>
+			<p>It seems like you have opened this file by double-clicking on it. In order to test your build in a browser <b>you need to load this file from a web server</b>. You can either upload this file and the rest of the files from a Defold HTML5 bundle to a web hosting service OR host them using a local web server on your home network.</p>
+			<p><a href="https://defold.com/manuals/html5/#testing-html5-build" target="_blank">Learn more about running a local web server in the Defold HTML5 manual</a>.</p>
+		</div>
+		<div id="webgl-not-supported" style="display: none; margin: 3em;">
+			<h1>WebGL not supported ⚠️</h1>
+			<p>WebGL is not supported by your browser - visit <a href="https://get.webgl.org/">https://get.webgl.org/</a> to learn more.</p>
+		</div>
+		<div id="canvas-container" class="canvas-app-canvas-container">
+			<canvas id="canvas" class="canvas-app-canvas" tabindex="1" width="960" height="640"></canvas>
+		</div>
+		<div class="buttons-background">
+			<div class="button" onclick="Module.toggleFullscreen();">Fullscreen</div>
+			<div class="link">Made with <a href="https://defold.com/" target="_blank">Defold</a></div>
+		</div>
+	</div>
+	<!-- -->
+	<script>
+		// Fallback to make sure globalThis is available when running in an old
+		// browser (available from Chome 71)
+		// https://github.com/defold/defold/issues/10503
+		if (typeof globalThis === 'undefined') {
+			window.globalThis = window;
+		}
+	</script>
+	<script id='engine-loader' type='text/javascript' src="dmloader.js"></script>
+	<script id='engine-setup' type='text/javascript'>
+		// From here you can configure game startup parameters via the CUSTOM_PARAMETERS object,
+		// override ProgressView to create your own loader. See dmloader.js for more details.
+	</script>
+	<script id='engine-start' type='text/javascript'>
+		var runningFromFileWarning = document.getElementById("running-from-file-warning");
+		if (window.location.href.startsWith("file://")) {
+			runningFromFileWarning.style.display = "block";
+		}
+		else {
+			EngineLoader.load("canvas", "SnakeMultiplayerPeerJS");
+			runningFromFileWarning.parentNode.removeChild(runningFromFileWarning);
+		}
+	</script>
+</body>
+</html>
+
