@@ -475,10 +475,33 @@
   //   join-input     : input do id do peer a entrar
   //   join           : botao JOIN     -> flag _joinId
   //   discover       : botao DISCOVER -> flag _discoverPressed
+  //   gen-qr         : botao GEN QR   -> flag _genQrPressed (gera o QR da sala
+  //                    deste peer sob demanda via QR.show_generator, estilo CDN)
   //   copy-id        : botao Copy id
-  //   dpad-up/down/left/right : direcao deste peer -> flag _dir (1..4)
+  //   dpad-up/down/left/right : direcao deste peer (held-set por eixo). Um vertical
+  //                    + um horizontal seguram a DIAGONAL -> flags _dir + _dir2.
+  //                    Clicar a primaria de novo volta ao cardinal (limpa _dir2).
+  //   dpad-clear     : volta ao movimento CARDINAL (solta _dir2, mantem _dir)
+  //   dpad-upleft / dpad-upright / dpad-downleft / dpad-downright : botoes de CANTO
+  //                    que setam _dir + _dir2 (vertical+horizontal) num clique so.
+  //                    Caminho de diagonal mais limpo p/ o gate (NOVOS testids).
   //   btn-a          : USE POWERUP    -> flag _btnA (pulso de 1 frame)
   //   btn-b          : reservado      -> flag _btnB (pulso; bit reservado)
+  //   hud-toggle     : esconde/mostra SO o MENU DE DEBUG/dev (texto "HIDE HUD" /
+  //                    "SHOW HUD"). Colapsa as linhas .hud-chrome do painel DOM
+  //                    (join/self/copy/peer-count/mesh-status/auth-line/lista
+  //                    snake-<id> + os botoes dpad/ab de DEBUG do painel) por
+  //                    display:none e esconde o QR (#qr_gen_div). NAO esconde a UI
+  //                    de jogo: a tela/tabuleiro GBC, o placar do header e o
+  //                    analogico + A/B in-canvas CONTINUAM visiveis (o jogador
+  //                    segue jogando, #4). Os nos snake-<id> / self-id / peer-count
+  //                    ficam no DOM (display:none, NAO removidos), entao getByTestId
+  //                    ainda os acha. O botao hud-toggle (e o gen-qr) ficam na linha
+  //                    `controls`, NAO colapsada, sempre visiveis.
+  //   room-url       : URL de entrada deste peer (CLIENT_URL?room=<self_id>), o mesmo
+  //                    texto codificado no QR. Vazio antes de existir um id. Empurrado
+  //                    pelo Lua via MESHUI.set_room_url(url) (glue de UI, igual a
+  //                    set_mesh_status). O gate confere que contem "?room=" + o self id.
   //   snake-<id>     : no de presenca, existe quando o snake do peer <id> esta no
   //                    mundo (o gate confere que todo peer ve todos os N snakes)
 
@@ -493,14 +516,34 @@
   // direcoes (small ints) espelham config.dir: UP=1 DOWN=2 LEFT=3 RIGHT=4.
   var DIR = { up: 1, down: 2, left: 3, right: 4 };
 
+  // axis de cada direcao (espelha DIR_AXIS do Lua): UP/DOWN = vertical, LEFT/RIGHT
+  // = horizontal. Uma DIAGONAL e exatamente um vertical + um horizontal.
+  var DIR_AXIS = {};
+  DIR_AXIS[DIR.up] = "v"; DIR_AXIS[DIR.down] = "v";
+  DIR_AXIS[DIR.left] = "h"; DIR_AXIS[DIR.right] = "h";
+  // PERPENDICULAR-ONLY: o held-set guarda no maximo UMA componente por eixo
+  // (_vert, _horz), entao dir2 e SEMPRE de um eixo diferente de dir e nunca a
+  // oposta de dir no mesmo eixo. Anti-reverso final fica no snake_sim:set_dir.
+
   window.MESHUI = {
     // flags poladas pelo Lua. Os botoes SETAM; o Lua LE+LIMPA.
     _connectPressed: false,
     _joinId: "",
     _discoverPressed: false,
-    _dir: 0,        // ultima direcao DOM apertada (1..4), held ate trocar
+    _dir: 0,        // direcao PRIMARIA DOM (1..4), held ate trocar
+    _dir2: 0,       // direcao SECUNDARIA DOM (diagonal; 0 = cardinal puro)
+    // held-set de eixos (no maximo um vertical + um horizontal). dir = a componente
+    // do eixo apertada MAIS recentemente; dir2 = a OUTRA componente (ou 0). Espelha
+    // o held-set do D-pad de toque/teclado no Lua. _dir/_dir2 sao DERIVADOS destes.
+    _vert: 0,       // componente vertical segurada (UP/DOWN ou 0)
+    _horz: 0,       // componente horizontal segurada (LEFT/RIGHT ou 0)
+    _lastAxis: "",  // "v"/"h": eixo mexido por ultimo (= primaria)
     _btnA: false,   // USE POWERUP (pulso de 1 frame)
     _btnB: false,   // reservado (pulso de 1 frame)
+    _genQrPressed: false, // GEN QR sob demanda (pulso). O Lua chama QR.show_generator.
+    _hudHidden: false, // estado do HIDE HUD (held). O Lua poleia para esconder o
+                       // chrome in-canvas; o DOM/QR sao escondidos aqui no bridge.
+    _roomUrl: "",   // URL de entrada (CLIENT_URL?room=<self_id>), espelhada no DOM
     _built: false,
     _selfId: "",
 
@@ -530,6 +573,72 @@
         }
       } catch (e2) {}
       return false;
+    },
+
+    // Recalcula _dir/_dir2 do held-set de eixos. dir = a componente do eixo mexido
+    // por ultimo (_lastAxis); dir2 = a outra componente (0 se so um eixo ativo).
+    _recompute_dir: function () {
+      var v = this._vert | 0, h = this._horz | 0;
+      if (v !== 0 && h !== 0) {
+        if (this._lastAxis === "h") { this._dir = h; this._dir2 = v; }
+        else { this._dir = v; this._dir2 = h; }
+      } else if (v !== 0) {
+        this._dir = v; this._dir2 = 0;
+      } else if (h !== 0) {
+        this._dir = h; this._dir2 = 0;
+      } else {
+        // nada segurado: mantem a ultima primaria (held) e zera a diagonal.
+        this._dir2 = 0;
+      }
+    },
+
+    // Clique de uma direcao do D-pad DOM. Seta/substitui a componente do SEU eixo.
+    // Clicar a MESMA direcao primaria de novo = volta ao cardinal puro (limpa a
+    // secundaria). Clicar a OPOSTA da componente do mesmo eixo = flip daquele eixo
+    // (anti-reverso fica no snake_sim; aqui so trocamos a componente). Apos isto,
+    // dir = eixo mais recente, dir2 = o outro (ou 0). Gate-deterministico.
+    press_dir: function (dir) {
+      dir = dir | 0;
+      if (dir === 0) return;
+      var axis = DIR_AXIS[dir];
+      // clicar a primaria de novo, sem outro eixo: cardinal puro (limpa diagonal).
+      if (dir === this._dir && this._dir2 === 0) {
+        this._dir2 = 0;
+        return;
+      }
+      // clicar a primaria (com diagonal ativa): solta a secundaria -> cardinal puro.
+      if (dir === this._dir && this._dir2 !== 0) {
+        if (axis === "v") { this._horz = 0; } else { this._vert = 0; }
+        this._lastAxis = axis;
+        this._recompute_dir();
+        return;
+      }
+      if (axis === "v") { this._vert = dir; } else { this._horz = dir; }
+      this._lastAxis = axis;
+      this._recompute_dir();
+    },
+
+    // Botao de CANTO: seta dir + dir2 (um vertical + um horizontal) numa acao so.
+    // O caminho de diagonal mais limpo e observavel para o gate (sem cronometrar
+    // dois cliques). `vert` e UP/DOWN, `horz` e LEFT/RIGHT. A primaria fica o
+    // vertical (consistente), a secundaria o horizontal.
+    press_corner: function (vert, horz) {
+      this._vert = vert | 0;
+      this._horz = horz | 0;
+      this._lastAxis = "v";
+      this._recompute_dir();
+    },
+
+    // Volta ao cardinal puro: solta a secundaria mantendo a primaria atual.
+    clear_dir2: function () {
+      if (this._dir !== 0) {
+        if (DIR_AXIS[this._dir] === "v") { this._horz = 0; this._vert = this._dir; }
+        else { this._vert = 0; this._horz = this._dir; }
+        this._lastAxis = DIR_AXIS[this._dir];
+      } else {
+        this._vert = 0; this._horz = 0;
+      }
+      this._dir2 = 0;
     },
 
     // Constroi o painel DOM (controles + espelho) uma vez (idempotente).
@@ -571,6 +680,17 @@
       controls.appendChild(mkbtn("btn_discover", "discover", "DISCOVER",
         function () { self._discoverPressed = true; },
         "re-sync: acha e conecta peers ainda fora da malha"));
+      // GEN QR (sob demanda, estilo relay/CDN): (re)gera e mostra o QR da sala
+      // deste peer (CLIENT_URL?room=<self_id>) usando QR.show_generator (qrcodejs
+      // por CDN). Funciona com ou sem o auto-show ligado. So seta a flag; o Lua
+      // poleia e chama o gerador (mantem o seam: o html5.run("QR.*") fica no Lua).
+      controls.appendChild(mkbtn("btn_gen_qr", "gen-qr", "GEN QR",
+        function () { self._genQrPressed = true; },
+        "gera e mostra o QR da sala deste peer"));
+      // HIDE HUD toggle: colapsa o chrome do HUD (DOM + QR) para liberar a tela
+      // GBC. O proprio botao fica SEMPRE visivel para poder mostrar de novo.
+      controls.appendChild(mkbtn("btn_hud", "hud-toggle", "HIDE HUD",
+        function () { self.toggle_hud(); }, "esconde/mostra o HUD sobre a tela"));
 
       // linha de JOIN: input + botao
       var joinRow = document.createElement("div");
@@ -624,6 +744,38 @@
       countLine.appendChild(countLabel);
       countLine.appendChild(countVal);
 
+      // linha da room URL: o link de entrada deste peer (CLIENT_URL?room=<self_id>).
+      // O Lua empurra a URL via MESHUI.set_room_url; o QR (qr_bridge) tambem a
+      // codifica. data-testid="room-url" para o gate + clicavel para copiar.
+      var roomLine = document.createElement("div");
+      roomLine.style.cssText = "margin-bottom:4px;display:flex;align-items:center;gap:6px;";
+      var roomLabel = document.createElement("span");
+      roomLabel.textContent = "room: ";
+      var roomVal = document.createElement("span");
+      roomVal.id = "room_url";
+      roomVal.setAttribute("data-testid", "room-url");
+      roomVal.textContent = "";
+      roomVal.title = "clique para copiar o link de entrada (QR)";
+      roomVal.style.cssText = [
+        "cursor:pointer;", "user-select:all;", "-webkit-user-select:all;",
+        "color:#8f8;", "background:rgba(40,44,60,0.6);",
+        "padding:1px 5px;", "border-radius:4px;",
+        "max-width:180px;", "overflow:hidden;", "text-overflow:ellipsis;",
+        "white-space:nowrap;", "display:inline-block;", "vertical-align:middle;"
+      ].join("");
+      roomVal.addEventListener("click", function () {
+        var u = String(self._roomUrl || "");
+        if (u !== "" && navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(u).then(function () {
+            var prev = roomVal.textContent;
+            roomVal.textContent = "copiado!";
+            setTimeout(function () { roomVal.textContent = self._roomUrl || prev; }, 1000);
+          }, function () {});
+        }
+      });
+      roomLine.appendChild(roomLabel);
+      roomLine.appendChild(roomVal);
+
       // linha de status legivel da malha (cosmetico, NAO e testid do gate decisivo)
       var meshStatus = document.createElement("div");
       meshStatus.id = "mesh_status";
@@ -638,17 +790,36 @@
       authLine.style.cssText = "margin-bottom:4px;color:#9c9;font-size:11px;";
       authLine.textContent = "authority: ?";
 
-      // D-pad DOM (cruz) + A/B: controles test-observaveis do steering deste peer
+      // D-pad DOM (cruz) + A/B: controles test-observaveis do steering deste peer.
+      // Cada direcao cardinal seta/substitui a componente do SEU eixo (press_dir):
+      // segurar um vertical + um horizontal forma a DIAGONAL (dir + dir2). Clicar a
+      // primaria de novo volta ao cardinal puro; dpad-clear tambem solta a diagonal.
       var dpadRow = document.createElement("div");
       dpadRow.style.cssText = "margin-bottom:4px;";
       dpadRow.appendChild(mkbtn("dpad_up", "dpad-up", "UP",
-        function () { self._dir = DIR.up; }));
+        function () { self.press_dir(DIR.up); }));
       dpadRow.appendChild(mkbtn("dpad_down", "dpad-down", "DOWN",
-        function () { self._dir = DIR.down; }));
+        function () { self.press_dir(DIR.down); }));
       dpadRow.appendChild(mkbtn("dpad_left", "dpad-left", "LEFT",
-        function () { self._dir = DIR.left; }));
+        function () { self.press_dir(DIR.left); }));
       dpadRow.appendChild(mkbtn("dpad_right", "dpad-right", "RIGHT",
-        function () { self._dir = DIR.right; }));
+        function () { self.press_dir(DIR.right); }));
+      dpadRow.appendChild(mkbtn("dpad_clear", "dpad-clear", "CARDINAL",
+        function () { self.clear_dir2(); }, "volta ao movimento cardinal (sem diagonal)"));
+
+      // Botoes de CANTO (DIAGONAL direta): setam dir + dir2 num clique so. Caminho
+      // de diagonal mais limpo para o gate (sem cronometrar dois cliques). NOVOS
+      // testids; nao alteram dpad-up/down/left/right.
+      var diagRow = document.createElement("div");
+      diagRow.style.cssText = "margin-bottom:4px;";
+      diagRow.appendChild(mkbtn("dpad_upleft", "dpad-upleft", "UL",
+        function () { self.press_corner(DIR.up, DIR.left); }, "diagonal cima-esquerda"));
+      diagRow.appendChild(mkbtn("dpad_upright", "dpad-upright", "UR",
+        function () { self.press_corner(DIR.up, DIR.right); }, "diagonal cima-direita"));
+      diagRow.appendChild(mkbtn("dpad_downleft", "dpad-downleft", "DL",
+        function () { self.press_corner(DIR.down, DIR.left); }, "diagonal baixo-esquerda"));
+      diagRow.appendChild(mkbtn("dpad_downright", "dpad-downright", "DR",
+        function () { self.press_corner(DIR.down, DIR.right); }, "diagonal baixo-direita"));
 
       var abRow = document.createElement("div");
       abRow.style.cssText = "margin-bottom:4px;";
@@ -661,18 +832,67 @@
       var mesh = document.createElement("div");
       mesh.id = "mesh";
 
+      // Tag the HUD chrome rows that HIDE HUD collapses. The `controls` row is NOT
+      // tagged: it holds the hud-toggle button, which must stay visible to restore.
+      // Hiding uses display:none (the snake-<id> / self-id / peer-count nodes stay
+      // in the DOM so getByTestId still resolves them; we hide, never remove).
+      [joinRow, selfLine, roomLine, countLine, meshStatus, authLine, dpadRow, diagRow, abRow, mesh]
+        .forEach(function (el) { el.classList.add("hud-chrome"); });
+
       panel.appendChild(controls);
       panel.appendChild(joinRow);
       panel.appendChild(selfLine);
+      panel.appendChild(roomLine);
       panel.appendChild(countLine);
       panel.appendChild(meshStatus);
       panel.appendChild(authLine);
       panel.appendChild(dpadRow);
+      panel.appendChild(diagRow);
       panel.appendChild(abRow);
       panel.appendChild(mesh);
       host.appendChild(panel);
 
+      // apply the current hud state (in case it was toggled before build).
+      this._apply_hud();
       this._built = true;
+    },
+
+    // HIDE HUD: flip the flag, hide/show the tagged chrome rows + the QR div, and
+    // relabel the button. The flag is also polled by Lua (poll_controls.hud) so the
+    // in-canvas chrome can hide too. Nodes are display:none, never removed, so the
+    // gate's getByTestId still resolves the (hidden) test state.
+    toggle_hud: function () {
+      this._hudHidden = !this._hudHidden;
+      this._apply_hud();
+    },
+    _apply_hud: function () {
+      var hidden = this._hudHidden === true;
+      var rows = document.querySelectorAll("#mesh_panel .hud-chrome");
+      for (var i = 0; i < rows.length; i++) {
+        rows[i].style.display = hidden ? "none" : "";
+      }
+      var btn = document.getElementById("btn_hud");
+      if (btn) btn.textContent = hidden ? "SHOW HUD" : "HIDE HUD";
+      // the panel background only frames the chrome; when hidden, drop it so just
+      // the toggle button floats over the GBC screen.
+      var panel = document.getElementById("mesh_panel");
+      if (panel) {
+        panel.style.background = hidden ? "transparent" : "rgba(12,14,20,0.85)";
+        panel.style.minWidth = hidden ? "0" : "240px";
+      }
+      // the QR generator div (qr_gen_div) overlaps the screen too: hide with HUD.
+      var qr = document.getElementById("qr_gen_div");
+      if (qr) qr.style.display = hidden ? "none" : "";
+    },
+
+    // The Lua side pushes the room URL (CLIENT_URL?room=<self_id>) each frame once
+    // the id is known. Mirrors it into data-testid="room-url" for the gate + humans.
+    set_room_url: function (url) {
+      this.init();
+      this._roomUrl = String(url == null ? "" : url);
+      var el = document.getElementById("room_url");
+      if (el && el.textContent !== "copiado!") el.textContent = this._roomUrl;
+      return true;
     },
 
     // O Lua chama por frame com a presenca dos snakes do mundo COMPARTILHADO como
@@ -707,13 +927,13 @@
         var id = ids[i];
         present[id] = true;
         var v = map[id];
-        var score, hx, hy, len, dir;
+        var score, hx, hy, len, dir, dir2;
         if (v && typeof v === "object") {
           score = v.s | 0; hx = (v.hx == null ? -1 : v.hx | 0);
           hy = (v.hy == null ? -1 : v.hy | 0); len = v.len | 0;
-          dir = v.d | 0;
+          dir = v.d | 0; dir2 = v.d2 | 0;
         } else {
-          score = v | 0; hx = -1; hy = -1; len = 0; dir = 0;
+          score = v | 0; hx = -1; hy = -1; len = 0; dir = 0; dir2 = 0;
         }
         var nodeId = "snake-" + id;
         var row = document.getElementById(nodeId);
@@ -730,9 +950,10 @@
         row.setAttribute("data-hy", String(hy));
         row.setAttribute("data-len", String(len));
         row.setAttribute("data-score", String(score));
-        row.setAttribute("data-dir", String(dir));   // 1=UP 2=DOWN 3=LEFT 4=RIGHT
-        // texto observavel: "score|hx,hy|dir" (presenca + cabeca + direcao).
-        row.textContent = String(score) + "|" + hx + "," + hy + "|" + dir;
+        row.setAttribute("data-dir", String(dir));    // 1=UP 2=DOWN 3=LEFT 4=RIGHT
+        row.setAttribute("data-dir2", String(dir2));  // DIAGONAL: 2a direcao (0=cardinal)
+        // texto observavel: "score|hx,hy|dir,dir2" (presenca + cabeca + diagonal).
+        row.textContent = String(score) + "|" + hx + "," + hy + "|" + dir + "," + dir2;
       }
       var rows = mesh.querySelectorAll(".snake");
       for (var j = 0; j < rows.length; j++) {
@@ -750,14 +971,18 @@
         join: String(this._joinId || ""),
         discover: this._discoverPressed === true,
         dir: this._dir | 0,
+        dir2: this._dir2 | 0,   // DIAGONAL: 2a direcao (0 = cardinal). dir continua compat.
         a: this._btnA === true,
-        b: this._btnB === true
+        b: this._btnB === true,
+        gen_qr: this._genQrPressed === true,  // pulso: (re)gera o QR sob demanda
+        hud_hidden: this._hudHidden === true   // HELD: Lua hides in-canvas chrome + QR when true
       };
       this._connectPressed = false;
       this._joinId = "";
       this._discoverPressed = false;
       this._btnA = false;
       this._btnB = false;
+      this._genQrPressed = false;
       return JSON.stringify(out);
     },
 
