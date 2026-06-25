@@ -322,13 +322,23 @@
         opts.secure = true;
         opts.port = 443;
         opts.path = "/";
+      } else if (/^https?:\/\//i.test(s)) {
+        // FORMATO URL: "http://localhost:9000/peerjs" (o que o usuario cola do
+        // PeerServer). Parseado com URL nativa: host, porta (default 80/443 por
+        // esquema), path (default /peerjs se vazio), secure pelo esquema https.
+        try {
+          var u = new URL(s);
+          opts.secure = (u.protocol === "https:");
+          opts.host = u.hostname || "localhost";
+          opts.port = u.port ? parseInt(u.port, 10) : (opts.secure ? 443 : 9000);
+          opts.path = (u.pathname && u.pathname !== "/") ? u.pathname : "/peerjs";
+        } catch (e) {
+          opts.host = "localhost"; opts.port = 9000; opts.path = "/peerjs"; opts.secure = false;
+        }
       } else {
-        // formato "host:port:path"  ex "127.0.0.1:9000:/peerjs"
-        var parts = s.split(":");
-        // host pode conter "." mas nao ":", port e numero, path comeca com /
-        // separamos por ":" mas o path pode ter "/" entao usamos split limitado
-        // "127.0.0.1:9000:/peerjs" -> ["127.0.0.1","9000","","peerjs"]
-        // Melhor: dividir em no maximo 3 partes
+        // formato "host:port:path"  ex "127.0.0.1:9000:/peerjs" ou "localhost:9000:/peerjs".
+        // host pode conter "." mas nao ":", port e numero, path comeca com /.
+        // Dividimos em no maximo 3 partes (o path pode conter "/").
         var idx1 = s.indexOf(":");
         var idx2 = s.indexOf(":", idx1 + 1);
         var h = s.substring(0, idx1);
@@ -589,6 +599,9 @@
     // flags poladas pelo Lua. Os botoes SETAM; o Lua LE+LIMPA.
     _connectPressed: false,
     _joinId: "",
+    _serverText: "",   // config do servidor de signaling: "" = cloud; senao URL/host:port:path
+                       //   ex "http://localhost:9000/peerjs" (PeerServer local). O Lua le
+                       //   isto ANTES de net.start, entao CONNECT usa o servidor digitado.
     _discoverPressed: false,
     _dir: 0,        // direcao PRIMARIA DOM (1..4), held ate trocar
     _dir2: 0,       // direcao SECUNDARIA DOM (diagonal; 0 = cardinal puro)
@@ -797,6 +810,28 @@
       controls_hud.appendChild(mkbtn("btn_perf", "perf-toggle", "PERF: OFF",
         function () { self.toggle_perf(); }, "acelera o hub p/ reduzir latencia dos controllers"));
 
+      // linha do SERVIDOR de signaling: input + botao LOCAL. Vazio = cloud (0.peerjs.com);
+      // preenchido = PeerServer proprio. Aceita uma URL ("http://localhost:9000/peerjs")
+      // ou o formato "host:port:path" ("localhost:9000:/peerjs"). O Lua poleia server e
+      // o passa a net.start ANTES do CONNECT, entao o peer sobe no servidor digitado. O
+      // botao LOCAL preenche o exemplo do PeerServer local num clique.
+      var serverRow = document.createElement("div");
+      serverRow.style.cssText = "margin-bottom:6px;";
+      var serverInput = document.createElement("input");
+      serverInput.id = "server_cfg";
+      serverInput.setAttribute("data-testid", "server-input");
+      serverInput.type = "text";
+      serverInput.placeholder = "servidor (vazio = cloud)";
+      serverInput.title = "PeerServer local, ex http://localhost:9000/peerjs (vazio = cloud.peerjs)";
+      serverInput.style.cssText = "width:150px;margin-right:4px;";
+      serverInput.addEventListener("input", function () { self._serverText = String(serverInput.value || "").trim(); });
+      var btnLocal = mkbtn("btn_server_local", "server-local", "LOCAL", function () {
+        serverInput.value = "http://localhost:9000/peerjs";
+        self._serverText = serverInput.value;
+      }, "preenche o servidor local PeerServer (http://localhost:9000/peerjs)");
+      serverRow.appendChild(serverInput);
+      serverRow.appendChild(btnLocal);
+
       // linha de JOIN: input + botao
       var joinRow = document.createElement("div");
       joinRow.style.cssText = "margin-bottom:6px;";
@@ -942,11 +977,12 @@
       // restore. `controls_hud` (all the OTHER buttons) IS tagged, so HIDE HUD hides
       // them too. Hiding uses display:none (snake-<id>/self-id/peer-count stay in the
       // DOM so getByTestId still resolves them; we hide, never remove).
-      [controls_hud, joinRow, selfLine, roomLine, countLine, meshStatus, authLine, dpadRow, diagRow, abRow, mesh]
+      [controls_hud, serverRow, joinRow, selfLine, roomLine, countLine, meshStatus, authLine, dpadRow, diagRow, abRow, mesh]
         .forEach(function (el) { el.classList.add("hud-chrome"); });
 
       panel.appendChild(controls);
       panel.appendChild(controls_hud);
+      panel.appendChild(serverRow);
       panel.appendChild(joinRow);
       panel.appendChild(selfLine);
       panel.appendChild(roomLine);
@@ -1039,6 +1075,21 @@
       return true;
     },
 
+    // Preenche o campo "id de outro peer" (data-testid="join-input") com um id, ex:
+    // ao abrir por um link ?room=<id> o Lua chama isto para o usuario VER o id de
+    // entrada ja escrito no campo (e poder reusar/editar), igual a ter digitado. So
+    // escreve quando o campo esta vazio e nao esta com foco, para nao apagar o que o
+    // usuario estiver digitando. Idempotente; nao dispara o JOIN (so preenche).
+    set_join_input: function (id) {
+      this.init();
+      var el = document.getElementById("join_id");
+      if (!el) return false;
+      var v = String(id == null ? "" : id);
+      if (v === "") return false;
+      if (el.value === "" && document.activeElement !== el) el.value = v;
+      return true;
+    },
+
     // O Lua chama por frame com a presenca dos snakes do mundo COMPARTILHADO como
     // JSON {"<id>":{"s":score,"hx":headx,"hy":heady,"len":n},...} + o id deste peer.
     // Cria/atualiza um no por peer data-testid="snake-<id>" e atualiza self-id +
@@ -1071,13 +1122,16 @@
         var id = ids[i];
         present[id] = true;
         var v = map[id];
-        var score, hx, hy, len, dir, dir2;
+        var score, hx, hy, len, dir, dir2, cr, cg, cb;
         if (v && typeof v === "object") {
           score = v.s | 0; hx = (v.hx == null ? -1 : v.hx | 0);
           hy = (v.hy == null ? -1 : v.hy | 0); len = v.len | 0;
           dir = v.d | 0; dir2 = v.d2 | 0;
+          // cor autoritativa do snake (0..1) vinda do mundo do hub (world_to_json r,g,b).
+          cr = (v.r == null ? 1 : v.r); cg = (v.g == null ? 1 : v.g); cb = (v.b == null ? 1 : v.b);
         } else {
           score = v | 0; hx = -1; hy = -1; len = 0; dir = 0; dir2 = 0;
+          cr = 1; cg = 1; cb = 1;
         }
         var nodeId = "snake-" + id;
         var row = document.getElementById(nodeId);
@@ -1113,6 +1167,14 @@
         row.setAttribute("data-score", String(score));
         row.setAttribute("data-dir", String(dir));    // 1=UP 2=DOWN 3=LEFT 4=RIGHT
         row.setAttribute("data-dir2", String(dir2));  // DIAGONAL: 2a direcao (0=cardinal)
+        // COR autoritativa do snake como "rr,gg,bb" (0..255), MESMO formato do
+        // data-my-color do controller.html. O gate confere a paridade de cor
+        // controller<->hub lendo este atributo (espelho read-only do mundo, nao muda
+        // a logica do jogo). Arredondamos igual ao swatch para casar bit-a-bit.
+        var crr = Math.round(Math.max(0, Math.min(1, cr)) * 255);
+        var cgg = Math.round(Math.max(0, Math.min(1, cg)) * 255);
+        var cbb = Math.round(Math.max(0, Math.min(1, cb)) * 255);
+        row.setAttribute("data-color", crr + "," + cgg + "," + cbb);
         // status live/gone (do Lua via set_peer_status); marca visual + data-status.
         var st2 = (this._peerStatus && this._peerStatus[id]) || "";
         if (st2) row.setAttribute("data-status", st2);
@@ -1189,7 +1251,8 @@
         color_press: this._colorPressed === true, // pulso: Lua avanca o slot + request_color
         become_hub_press: this._becomeHubPressed === true, // pulso: Lua chama net.become_hub
         remove_id: String(this._removeId || ""), // pulso: id que o hub mandou remover ([x])
-        perf_on: this._perfOn === true // HELD: perf mode (hub broadcast acelerado + trim)
+        perf_on: this._perfOn === true, // HELD: perf mode (hub broadcast acelerado + trim)
+        server: String(this._serverText || "") // HELD: config do servidor (vazio = cloud). NAO limpa.
       };
       this._connectPressed = false;
       this._joinId = "";

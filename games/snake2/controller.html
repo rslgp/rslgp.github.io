@@ -495,7 +495,13 @@
     // test-observable: is the gamepad currently hidden?
     controls_hidden: function () { return document.body.classList.contains("controls-hidden"); },
     // test-observable: this controller's assigned color "r,g,b" (0..255), or "" yet.
-    my_color: function () { return document.body.getAttribute("data-my-color") || ""; }
+    my_color: function () { return document.body.getAttribute("data-my-color") || ""; },
+    // test-observable: the current 0-based palette index this controller shows (-1 unset).
+    color_index: function () { return colorIndex | 0; },
+    // Rotate to the NEXT palette color RIGHT NOW (same path as the COLOR button):
+    // repaints the local swatch AND sends "K|<idx>" up to the hub (which skip-takens
+    // and confirms via KSET). Returns the new local index so the gate correlates it.
+    rotate_color: function () { rotateColor(); return colorIndex | 0; }
   };
 
   // ── hide-controls toggle: collapse/show this controller's own gamepad ───────
