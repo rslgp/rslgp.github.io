@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="utf-8">
@@ -208,11 +208,15 @@
     myid_top:  "34.4%" // ancora vertical do div do ID sobre o canvas
   };
 
-  // Idiom compartilhado: resolve o elemento que hospeda overlays absolutos
-  // sobre o canvas do jogo (garante position:relative no pai).
+  // Idiom compartilhado (UNICA definicao, usada por PEERJS e por MESHUI): resolve o
+  // elemento que hospeda overlays absolutos sobre o canvas do jogo (garante
+  // position:relative no pai). Fallback document.body quando o canvas ainda nao
+  // existe, para o overlay nunca falhar silenciosamente. Antes havia uma 2a copia
+  // mais abaixo (antes do MESHUI) que, por hoisting de declaracao de funcao no mesmo
+  // IIFE, sobrescrevia esta; as duas foram unificadas aqui (mesmo comportamento).
   function overlay_host() {
     var canvas = document.getElementById("canvas");
-    if (!canvas) return null;
+    if (!canvas) return document.body;
     var host = canvas.parentNode || document.body;
     if (canvas.parentNode) canvas.parentNode.style.position = "relative";
     return host;
@@ -520,7 +524,7 @@
     }
   };
 
-  // ── MESHUI: espelho DOM test-observavel + controles DOM (para o gate) ────────
+  // â”€â”€ MESHUI: espelho DOM test-observavel + controles DOM (para o gate) â”€â”€â”€â”€â”€â”€â”€â”€
   // O jogo continua sendo a GBC handheld desenhada no canvas Defold (humanos). O
   // MESHUI e um ESPELHO minimo do estado test-observavel para o Playwright: ele
   // LE texto DOM por getByTestId(...) e CLICA <button>s reais, entao NAO ha tap no
@@ -567,13 +571,7 @@
   //   snake-<id>     : no de presenca, existe quando o snake do peer <id> esta no
   //                    mundo (o gate confere que todo peer ve todos os N snakes)
 
-  function overlay_host() {
-    var canvas = document.getElementById("canvas");
-    if (!canvas) return document.body;
-    var host = canvas.parentNode || document.body;
-    if (canvas.parentNode) canvas.parentNode.style.position = "relative";
-    return host;
-  }
+  // (overlay_host vive uma unica vez no topo do IIFE; MESHUI reusa a mesma funcao.)
 
   // direcoes (small ints) espelham config.dir: UP=1 DOWN=2 LEFT=3 RIGHT=4.
   var DIR = { up: 1, down: 2, left: 3, right: 4 };
@@ -1132,7 +1130,7 @@
         if (!present[pid]) rows[j].remove();
       }
 
-      // ── PLACAR colorido (leaderboard) ─────────────────────────────────────
+      // â”€â”€ PLACAR colorido (leaderboard) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       // Ordena por score (desc), tie-break por id (estavel). Cada linha na COR do
       // snake daquele jogador (r,g,b do mundo). O proprio peer ganha um marcador.
       var sl = document.getElementById("scorelist_div");
@@ -1163,7 +1161,7 @@
           line.style.color = "rgb(" + rr + "," + gg + "," + bb + ")";
           var mine = (this._selfId && e.id === this._selfId);
           line.style.fontWeight = mine ? "900" : "bold";
-          // Label "P<short-id>: <score>" (ASCII only; the old ▸/● glyphs did not render).
+          // Label "P<short-id>: <score>" (ASCII only; the old â–¸/â— glyphs did not render).
           // The row is in the player's snake color; the own row is suffixed " (you)".
           var plabel = "P" + String(e.id).replace(/[^0-9a-zA-Z]/g, "").slice(0, 4);
           line.textContent = plabel + ": " + e.s + (mine ? " (you)" : "");
@@ -1281,7 +1279,7 @@
     return document.getElementById("canvas");
   }
 
-  // ── Gerador (STATELESS) ───────────────────────────────────────────────────
+  // â”€â”€ Gerador (STATELESS) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // O bridge NAO guarda "quero mostrar o QR?": quem decide isso e o Lua
   // (qr_should_show). Aqui so desenhamos ou removemos o div quando mandado.
 
@@ -1329,7 +1327,7 @@
     }
   }
 
-  // ── Leitor (camera + jsQR) ────────────────────────────────────────────────
+  // â”€â”€ Leitor (camera + jsQR) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   function setResult(r) { _scanResult = r; }
 
@@ -1458,12 +1456,12 @@
 
 	<div id="app-container" class="canvas-app-container">
 		<div id="running-from-file-warning" style="display: none; margin: 3em;">
-			<h1>Running from local file ⚠️</h1>
+			<h1>Running from local file âš ï¸</h1>
 			<p>It seems like you have opened this file by double-clicking on it. In order to test your build in a browser <b>you need to load this file from a web server</b>. You can either upload this file and the rest of the files from a Defold HTML5 bundle to a web hosting service OR host them using a local web server on your home network.</p>
 			<p><a href="https://defold.com/manuals/html5/#testing-html5-build" target="_blank">Learn more about running a local web server in the Defold HTML5 manual</a>.</p>
 		</div>
 		<div id="webgl-not-supported" style="display: none; margin: 3em;">
-			<h1>WebGL not supported ⚠️</h1>
+			<h1>WebGL not supported âš ï¸</h1>
 			<p>WebGL is not supported by your browser - visit <a href="https://get.webgl.org/">https://get.webgl.org/</a> to learn more.</p>
 		</div>
 		<div id="canvas-container" class="canvas-app-canvas-container">
