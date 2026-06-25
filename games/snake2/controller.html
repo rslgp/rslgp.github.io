@@ -129,6 +129,13 @@
   var SEND_HZ = 20;                 // tick-rate cap (matches the hub broadcast_dt)
   var SEND_DT = 1000 / SEND_HZ;
   var DEADZONE = 0.30;              // sub-deadzone magnitude = no direction
+  // DIAGONAL gate: the SECONDARY axis only becomes a diagonal when it is a real
+  // fraction of the MAJOR axis (mirrors config.control.stick_diag_ratio on the Lua
+  // side). Without this a slightly-off-axis drag (e.g. ax=0.9, ay=0.35) emitted an
+  // unwanted dir2, so the snake zig-zagged instead of turning to the clean cardinal
+  // the player meant: it "did not steer" the intended direction. With the ratio a
+  // near-cardinal drag snaps to a clean cardinal; only a true corner push diagonals.
+  var DIAG_RATIO = 0.5;            // secondary >= 0.5 * major -> diagonal
   var BTN_A = 1;                    // bit0 = USE POWERUP / A (config.btn SOT mirror)
 
   function qs(name, def) {
@@ -195,10 +202,12 @@
     var primary, secondary = 0;
     if (absx >= absy) {
       primary = horiz;
-      if (absy >= DEADZONE) secondary = vert;
+      // diagonal only when the minor (vertical) axis is a real fraction of the major
+      // (horizontal) one: a near-cardinal drag stays a clean cardinal (no zig-zag).
+      if (absy >= DEADZONE && absy >= DIAG_RATIO * absx) secondary = vert;
     } else {
       primary = vert;
-      if (absx >= DEADZONE) secondary = horiz;
+      if (absx >= DEADZONE && absx >= DIAG_RATIO * absy) secondary = horiz;
     }
     return { dir: primary, dir2: secondary, neutral: false };
   }
@@ -462,6 +471,17 @@
       _driveStamp[dir] = t0;
       sendNow();
       return t0;
+    },
+    // Drive the ANALOG STICK axis directly (ax,ay in [-1,1], y-up) and send NOW.
+    // This is the same code path the human pointer-drag uses (setAxis -> vectorToDirs),
+    // so the gate exercises the REAL axis-to-direction conversion, not just the d-pad.
+    // Returns the resulting primary dir so the test can correlate the input.
+    set_axis: function (ax, ay) {
+      setAxis(ax, ay);               // updates st.dir/st.dir2 via vectorToDirs
+      var t0 = performance.now();
+      _driveStamp[st.dir | 0] = t0;
+      sendNow();                     // immediate send (do not wait for the 20Hz tick)
+      return st.dir | 0;
     },
     driveStamp: function (dir) { return _driveStamp[dir | 0] || 0; },
     sent: function () { return st.sent; },
