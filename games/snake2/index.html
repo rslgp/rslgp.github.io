@@ -309,7 +309,16 @@
       var opts = { debug: 0 };
 
       var s = String(hostOrCfg || "").trim();
-      if (s !== "" && s !== "cloud") {
+      if (s === "" || s === "cloud") {
+        // CLOUD: fixa o host publico do PeerJS EXPLICITAMENTE em 0.peerjs.com (HTTPS).
+        // O default da lib pode resolver para cloud.peerjs.com, que ja ficou fora do ar
+        // (curl 000) enquanto 0.peerjs.com respondia 200; pinar evita o peer nunca
+        // receber um id quando aquele host esta down. Mesmo signaling, host saudavel.
+        opts.host = "0.peerjs.com";
+        opts.secure = true;
+        opts.port = 443;
+        opts.path = "/";
+      } else {
         // formato "host:port:path"  ex "127.0.0.1:9000:/peerjs"
         var parts = s.split(":");
         // host pode conter "." mas nao ":", port e numero, path comeca com /
@@ -452,6 +461,47 @@
       host.appendChild(d);
     },
 
+    // Esconde/remove o ID centralizado sobre o canvas (peerjs_myid_div). O id segue
+    // visivel no painel DOM (self-id) e o placar colorido mostra quem e quem.
+    hide_myid: function () {
+      var old = document.getElementById("peerjs_myid_div");
+      if (old) old.remove();
+    },
+
+    // Mostra a CONTAGEM DE JOGADORES centralizada no topo do canvas: "<conectados> / 8".
+    // Ocupa o lugar do antigo ID centralizado. O Lua chama por frame com o texto pronto
+    // (get_mesh_status m + config.net.recommended_max). Idempotente (cria 1x, depois so
+    // atualiza o texto). data-testid="player-count-center" para o gate.
+    show_player_count: function (text) {
+      var t = String(text == null ? "" : text);
+      var d = document.getElementById("player_count_center");
+      if (!d) {
+        var host = overlay_host();
+        if (!host) return;
+        d = document.createElement("div");
+        d.id = "player_count_center";
+        d.setAttribute("data-testid", "player-count-center");
+        // CENTER-TOP: horizontalmente centrado, colado no topo do canvas (nao no meio).
+        d.style.cssText = [
+          "position:absolute;", "left:50%;", "top:6px;",
+          "transform:translateX(-50%);",
+          "background:rgba(20,20,40,0.78);", "color:#cde;",
+          "font:bold 15px monospace;", "padding:3px 12px;",
+          "border-radius:6px;", "letter-spacing:1px;",
+          "pointer-events:none;", "white-space:nowrap;",
+          "z-index:" + OVERLAY.z_myid + ";"
+        ].join("");
+        host.appendChild(d);
+      }
+      if (d.textContent !== t) d.textContent = t;
+    },
+
+    // Remove o overlay de contagem central (desativado a pedido). Idempotente.
+    hide_player_count: function () {
+      var d = document.getElementById("player_count_center");
+      if (d) d.remove();
+    },
+
     destroy: function () {
       if (_peer) { _peer.destroy(); _peer = null; }
       _conns = {}; _buf = [];
@@ -545,6 +595,11 @@
                        // chrome in-canvas; o DOM/QR sao escondidos aqui no bridge.
     _ctrlHidden: false, // estado do HIDE CTRL (held). O Lua poleia (ctrl_hidden) e
                         // esconde os nodes do gamepad in-canvas (stick + A/B).
+    _colorPressed: false, // pulso COLOR: o Lua avanca o slot e pede a nova cor.
+    _perfOn: false,    // HELD: perf mode (hub broadcast acelerado + trim). Lua poleia.
+    _becomeHubPressed: false, // pulso BECOME HUB: o Lua chama net.become_hub (so se hub saiu).
+    _removeId: "",     // pulso: id do snake que o hub clicou [x] para remover.
+    _peerStatus: null, // id -> "live"|"gone" (do Lua, para marcar a lista de snakes).
     _roomUrl: "",   // URL de entrada (CLIENT_URL?room=<self_id>), espelhada no DOM
     _built: false,
     _selfId: "",
@@ -677,29 +732,60 @@
         return b;
       }
 
-      controls.appendChild(mkbtn("btn_connect", "connect", "CONNECT",
+      // A linha `controls` fica SEMPRE visivel e segura SO os dois toggles (HIDE HUD
+      // + HIDE CTRL), para poder sempre re-mostrar o HUD. Todos os DEMAIS botoes
+      // (CONNECT, DISCOVER, GEN QR, COLOR, BECOME HUB) vao para `controls_hud`, uma
+      // linha .hud-chrome que o HIDE HUD colapsa junto com o resto do chrome.
+      var controls_hud = document.createElement("div");
+      controls_hud.style.cssText = "margin-bottom:6px;";
+
+      // HIDE HUD toggle (sempre visivel): colapsa o chrome do HUD (DOM + QR + os botoes
+      // de controls_hud) para liberar a tela GBC. O proprio botao NUNCA se esconde.
+      controls.appendChild(mkbtn("btn_hud", "hud-toggle", "HIDE HUD",
+        function () { self.toggle_hud(); }, "esconde/mostra o HUD sobre a tela"));
+      // HIDE CTRL toggle (sempre visivel): esconde/mostra os CONTROLES in-canvas
+      // (analogico + A/B). So SETA a flag held _ctrlHidden; o Lua poleia
+      // (poll_controls.ctrl_hidden) e da gui.set_enabled nos nodes do gamepad.
+      controls.appendChild(mkbtn("btn_ctrl", "ctrl-toggle", "HIDE CTRL",
+        function () { self.toggle_ctrl(); }, "esconde/mostra os controles (analogico + A/B)"));
+
+      // --- botoes DENTRO do HUD (escondem com HIDE HUD) ---
+      controls_hud.appendChild(mkbtn("btn_connect", "connect", "CONNECT",
         function () { self._connectPressed = true; }));
-      controls.appendChild(mkbtn("btn_discover", "discover", "DISCOVER",
+      controls_hud.appendChild(mkbtn("btn_discover", "discover", "DISCOVER",
         function () { self._discoverPressed = true; },
         "re-sync: acha e conecta peers ainda fora da malha"));
       // GEN QR (sob demanda, estilo relay/CDN): (re)gera e mostra o QR da sala
       // deste peer (CLIENT_URL?room=<self_id>) usando QR.show_generator (qrcodejs
-      // por CDN). Funciona com ou sem o auto-show ligado. So seta a flag; o Lua
-      // poleia e chama o gerador (mantem o seam: o html5.run("QR.*") fica no Lua).
-      controls.appendChild(mkbtn("btn_gen_qr", "gen-qr", "GEN QR",
+      // por CDN). So seta a flag; o Lua poleia e chama o gerador.
+      controls_hud.appendChild(mkbtn("btn_gen_qr", "gen-qr", "GEN QR",
         function () { self._genQrPressed = true; },
         "gera e mostra o QR da sala deste peer"));
-      // HIDE HUD toggle: colapsa o chrome do HUD (DOM + QR) para liberar a tela
-      // GBC. O proprio botao fica SEMPRE visivel para poder mostrar de novo.
-      controls.appendChild(mkbtn("btn_hud", "hud-toggle", "HIDE HUD",
-        function () { self.toggle_hud(); }, "esconde/mostra o HUD sobre a tela"));
-      // HIDE CTRL toggle: esconde/mostra os CONTROLES in-canvas (analogico + A/B).
-      // Diferente do HIDE HUD (que so esconde o chrome de debug e MANTEM o controle):
-      // este esconde o proprio gamepad desenhado no canvas. So SETA a flag held
-      // _ctrlHidden; o Lua poleia (poll_controls.ctrl_hidden) e da gui.set_enabled
-      // nos nodes ctl_stick_base/knob + btn_a/btn_b. O botao fica sempre visivel.
-      controls.appendChild(mkbtn("btn_ctrl", "ctrl-toggle", "HIDE CTRL",
-        function () { self.toggle_ctrl(); }, "esconde/mostra os controles (analogico + A/B)"));
+      // COLOR: rotaciona a cor do snake deste jogador. So SETA um pulso; o Lua poleia
+      // (color_press), avanca o slot e chama net.request_color (skip-taken na auth).
+      var colorBtn = mkbtn("btn_color", "color-btn", "", function () { self._colorPressed = true; },
+        "trocar a cor do seu snake");
+      var sw = document.createElement("span");
+      sw.id = "color_swatch_canvas";
+      sw.setAttribute("data-testid", "color-swatch");
+      sw.style.cssText = "display:inline-block;width:14px;height:14px;border-radius:50%;background:#555;border:1px solid #0008;vertical-align:middle;margin-right:5px;";
+      colorBtn.textContent = "";
+      colorBtn.appendChild(sw);
+      // Label "COLOR" (sem o caractere ">", que nao renderizava bem e atrapalhava). A
+      // COR ATUAL e mostrada pelo swatch ao lado, atualizado por set_color_swatch.
+      colorBtn.appendChild(document.createTextNode("COLOR"));
+      controls_hud.appendChild(colorBtn);
+      // BECOME HUB: so funciona quando o hub atual saiu (no-failover recovery). So
+      // SETA o pulso; o Lua poleia (become_hub_press) e chama net.become_hub (no-op se
+      // o hub esta vivo).
+      controls_hud.appendChild(mkbtn("btn_become_hub", "become-hub", "BECOME HUB",
+        function () { self._becomeHubPressed = true; },
+        "vira o hub (so quando o hub atual saiu)"));
+      // PERF: toggle held. Liga o broadcast acelerado (~40Hz) + trim no HUB, reduzindo
+      // a latencia dos controllers (custo: + CPU/banda no hub). So o hub age; nos demais
+      // e inocuo. O Lua poleia perf_on e chama net.set_perf_mode. Relabel PERF ON/OFF.
+      controls_hud.appendChild(mkbtn("btn_perf", "perf-toggle", "PERF: OFF",
+        function () { self.toggle_perf(); }, "acelera o hub p/ reduzir latencia dos controllers"));
 
       // linha de JOIN: input + botao
       var joinRow = document.createElement("div");
@@ -842,13 +928,15 @@
       mesh.id = "mesh";
 
       // Tag the HUD chrome rows that HIDE HUD collapses. The `controls` row is NOT
-      // tagged: it holds the hud-toggle button, which must stay visible to restore.
-      // Hiding uses display:none (the snake-<id> / self-id / peer-count nodes stay
-      // in the DOM so getByTestId still resolves them; we hide, never remove).
-      [joinRow, selfLine, roomLine, countLine, meshStatus, authLine, dpadRow, diagRow, abRow, mesh]
+      // tagged: it holds ONLY the hud-toggle + ctrl-toggle, which must stay visible to
+      // restore. `controls_hud` (all the OTHER buttons) IS tagged, so HIDE HUD hides
+      // them too. Hiding uses display:none (snake-<id>/self-id/peer-count stay in the
+      // DOM so getByTestId still resolves them; we hide, never remove).
+      [controls_hud, joinRow, selfLine, roomLine, countLine, meshStatus, authLine, dpadRow, diagRow, abRow, mesh]
         .forEach(function (el) { el.classList.add("hud-chrome"); });
 
       panel.appendChild(controls);
+      panel.appendChild(controls_hud);
       panel.appendChild(joinRow);
       panel.appendChild(selfLine);
       panel.appendChild(roomLine);
@@ -860,6 +948,24 @@
       panel.appendChild(abRow);
       panel.appendChild(mesh);
       host.appendChild(panel);
+
+      // PLACAR colorido (leaderboard) sobre o canvas, no canto superior DIREITO.
+      // Lista ordenada por score (desc); cada linha na COR do snake daquele jogador.
+      // E UI DE JOGO (nao chrome de debug), entao fica fora do painel e do HIDE HUD.
+      var old_sl = document.getElementById("scorelist_div");
+      if (old_sl) old_sl.remove();
+      var sl = document.createElement("div");
+      sl.id = "scorelist_div";
+      sl.setAttribute("data-testid", "score-list");
+      sl.style.cssText = [
+        "position:absolute;", "right:8px;", "top:8px;",
+        "z-index:120;", "pointer-events:none;",
+        "font:bold 13px monospace;",
+        "background:rgba(8,10,16,0.55);", "padding:5px 8px;",
+        "border-radius:6px;", "min-width:96px;", "text-align:right;",
+        "text-shadow:0 1px 2px #000;"
+      ].join("");
+      host.appendChild(sl);
 
       // apply the current hud state (in case it was toggled before build).
       this._apply_hud();
@@ -883,6 +989,15 @@
       this._ctrlHidden = !this._ctrlHidden;
       var btn = document.getElementById("btn_ctrl");
       if (btn) btn.textContent = this._ctrlHidden ? "SHOW CTRL" : "HIDE CTRL";
+    },
+
+    // PERF toggle (held). So flip a flag + relabel; o Lua poleia (perf_on) e chama
+    // net.set_perf_mode (so o hub aplica). data-perf p/ o gate.
+    toggle_perf: function () {
+      this._perfOn = !this._perfOn;
+      var btn = document.getElementById("btn_perf");
+      if (btn) btn.textContent = this._perfOn ? "PERF: ON" : "PERF: OFF";
+      try { document.body.setAttribute("data-perf", this._perfOn ? "1" : "0"); } catch (e) {}
     },
     _apply_hud: function () {
       var hidden = this._hudHidden === true;
@@ -963,6 +1078,23 @@
           row.setAttribute("data-testid", "snake-" + id);
           row.setAttribute("data-peer", id);
           row.title = String(id).slice(0, 8);
+          // TEXT span (observavel) + REMOVE [x] button as PERSISTENT children, so the
+          // per-frame text update does not wipe the button. [x] sets _removeId; the Lua
+          // poleia e chama net.remove_player (so o hub remove de fato).
+          var txt = document.createElement("span");
+          txt.className = "snake-txt";
+          row.appendChild(txt);
+          var self2 = this;
+          (function (pid) {
+            var x = document.createElement("button");
+            x.className = "snake-x";
+            x.setAttribute("data-testid", "remove-" + pid);
+            x.textContent = " [x]";
+            x.title = "remover este jogador (so o hub)";
+            x.style.cssText = "margin-left:6px;color:#f88;background:transparent;border:0;cursor:pointer;font:bold 11px monospace;";
+            x.addEventListener("click", function () { self2._removeId = pid; });
+            row.appendChild(x);
+          })(id);
           mesh.appendChild(row);
         }
         row.setAttribute("data-hx", String(hx));
@@ -971,13 +1103,61 @@
         row.setAttribute("data-score", String(score));
         row.setAttribute("data-dir", String(dir));    // 1=UP 2=DOWN 3=LEFT 4=RIGHT
         row.setAttribute("data-dir2", String(dir2));  // DIAGONAL: 2a direcao (0=cardinal)
-        // texto observavel: "score|hx,hy|dir,dir2" (presenca + cabeca + diagonal).
-        row.textContent = String(score) + "|" + hx + "," + hy + "|" + dir + "," + dir2;
+        // status live/gone (do Lua via set_peer_status); marca visual + data-status.
+        var st2 = (this._peerStatus && this._peerStatus[id]) || "";
+        if (st2) row.setAttribute("data-status", st2);
+        // texto observavel no SPAN (nao no row, p/ nao apagar o [x]): "score|hx,hy|dir,dir2".
+        var txtEl = row.querySelector(".snake-txt");
+        if (txtEl) {
+          txtEl.textContent = String(score) + "|" + hx + "," + hy + "|" + dir + "," + dir2 +
+            (st2 === "gone" ? " (gone)" : "");
+          txtEl.style.opacity = (st2 === "gone") ? "0.5" : "1";
+        }
       }
       var rows = mesh.querySelectorAll(".snake");
       for (var j = 0; j < rows.length; j++) {
         var pid = rows[j].getAttribute("data-peer");
         if (!present[pid]) rows[j].remove();
+      }
+
+      // â”€â”€ PLACAR colorido (leaderboard) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // Ordena por score (desc), tie-break por id (estavel). Cada linha na COR do
+      // snake daquele jogador (r,g,b do mundo). O proprio peer ganha um marcador.
+      var sl = document.getElementById("scorelist_div");
+      if (sl) {
+        var entries = [];
+        for (var k = 0; k < ids.length; k++) {
+          var eid = ids[k];
+          var ev = map[eid];
+          var es = (ev && typeof ev === "object") ? (ev.s | 0) : (ev | 0);
+          var er = (ev && ev.r != null) ? ev.r : 1;
+          var eg = (ev && ev.g != null) ? ev.g : 1;
+          var eb = (ev && ev.b != null) ? ev.b : 1;
+          entries.push({ id: eid, s: es, r: er, g: eg, b: eb });
+        }
+        entries.sort(function (a, b) { return (b.s - a.s) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0); });
+        // rebuild the list (small N; simplest + always correct order).
+        sl.textContent = "";
+        for (var m2 = 0; m2 < entries.length; m2++) {
+          var e = entries[m2];
+          var rr = Math.round(Math.max(0, Math.min(1, e.r)) * 255);
+          var gg = Math.round(Math.max(0, Math.min(1, e.g)) * 255);
+          var bb = Math.round(Math.max(0, Math.min(1, e.b)) * 255);
+          var line = document.createElement("div");
+          line.setAttribute("data-testid", "score-row-" + e.id);
+          line.setAttribute("data-peer", e.id);
+          line.setAttribute("data-score", String(e.s));
+          line.setAttribute("data-rank", String(m2 + 1));
+          line.style.color = "rgb(" + rr + "," + gg + "," + bb + ")";
+          var mine = (this._selfId && e.id === this._selfId);
+          line.style.fontWeight = mine ? "900" : "bold";
+          // Label "P<short-id>: <score>" (ASCII only; the old â–¸/â— glyphs did not render).
+          // The row is in the player's snake color; the own row is suffixed " (you)".
+          var plabel = "P" + String(e.id).replace(/[^0-9a-zA-Z]/g, "").slice(0, 4);
+          line.textContent = plabel + ": " + e.s + (mine ? " (you)" : "");
+          sl.appendChild(line);
+        }
+        sl.style.display = entries.length ? "" : "none";
       }
     },
 
@@ -995,7 +1175,11 @@
         b: this._btnB === true,
         gen_qr: this._genQrPressed === true,  // pulso: (re)gera o QR sob demanda
         hud_hidden: this._hudHidden === true,  // HELD: Lua hides in-canvas chrome + QR when true
-        ctrl_hidden: this._ctrlHidden === true // HELD: Lua hides the in-canvas controls (stick + A/B)
+        ctrl_hidden: this._ctrlHidden === true, // HELD: Lua hides the in-canvas controls (stick + A/B)
+        color_press: this._colorPressed === true, // pulso: Lua avanca o slot + request_color
+        become_hub_press: this._becomeHubPressed === true, // pulso: Lua chama net.become_hub
+        remove_id: String(this._removeId || ""), // pulso: id que o hub mandou remover ([x])
+        perf_on: this._perfOn === true // HELD: perf mode (hub broadcast acelerado + trim)
       };
       this._connectPressed = false;
       this._joinId = "";
@@ -1003,7 +1187,29 @@
       this._btnA = false;
       this._btnB = false;
       this._genQrPressed = false;
+      this._colorPressed = false;
+      this._becomeHubPressed = false;
+      this._removeId = "";
       return JSON.stringify(out);
+    },
+
+    // O Lua empurra a COR autoritativa do snake deste peer (r,g,b 0..1) para o swatch
+    // do botao COLOR. Tambem espelha data-my-color (0..255) para o gate. Glue de UI.
+    set_color_swatch: function (r, g, b) {
+      var rr = Math.max(0, Math.min(255, Math.round((r || 0) * 255)));
+      var gg = Math.max(0, Math.min(255, Math.round((g || 0) * 255)));
+      var bb = Math.max(0, Math.min(255, Math.round((b || 0) * 255)));
+      var el = document.getElementById("color_swatch_canvas");
+      if (el) el.style.background = "rgb(" + rr + "," + gg + "," + bb + ")";
+      var b2 = document.body; if (b2) b2.setAttribute("data-my-color", rr + "," + gg + "," + bb);
+      return true;
+    },
+
+    // O Lua (hub) empurra o status por peer (id -> "live"|"gone") para marcar a lista
+    // de snakes. So muda a marca/cor; a remocao continua MANUAL ([x] -> _removeId).
+    set_peer_status: function (jsonStatus) {
+      try { this._peerStatus = JSON.parse(jsonStatus || "{}") || {}; } catch (e) { this._peerStatus = {}; }
+      return true;
     },
 
     // O Lua empurra o status legivel da malha + a autoridade por frame (cosmetico).

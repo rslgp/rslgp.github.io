@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Star Snake Controller</title>
+<!-- Identical PeerJS lib + signaling the Defold hub uses (peerjs@1.5.5, cloud.peerjs.com). -->
+<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+<style>
+  :root { --bg:#0c0e14; --panel:#141826; --accent:#7cf; --ok:#8f8; --warn:#fd6; --btn:#e25; }
+  * { box-sizing:border-box; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; height:100%; background:var(--bg); color:#dde; font:14px/1.4 system-ui,monospace; }
+  /* This is a CONTROLLER, not a viewer: there is NO game board here, only the gamepad. */
+  .wrap { display:flex; flex-direction:column; height:100%; padding:10px; gap:8px; }
+  .hdr { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .pill { padding:3px 9px; border-radius:999px; background:var(--panel); font:bold 12px monospace; letter-spacing:.5px; }
+  #hub-status { color:var(--warn); }
+  #hub-status.ok { color:var(--ok); }
+  .ids { font:11px monospace; color:#9ab; word-break:break-all; }
+  .gamepad { flex:1; display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:0; }
+  /* AXIS control: a touch-draggable analog stick that emulates a directional axis. */
+  .stick-area { position:relative; flex:1; max-width:55%; aspect-ratio:1/1; align-self:center;
+                background:radial-gradient(circle at 50% 50%, #1b2030 0%, #11141f 70%);
+                border:2px solid #2a3045; border-radius:50%; touch-action:none; }
+  .stick-knob { position:absolute; left:50%; top:50%; width:38%; height:38%; transform:translate(-50%,-50%);
+                background:radial-gradient(circle at 40% 35%, #4a567a, #2b3350); border:2px solid #5a6790;
+                border-radius:50%; pointer-events:none; }
+  .right { display:flex; flex-direction:column; align-items:center; gap:14px; }
+  /* ACTION button (A = USE POWERUP, bit0). */
+  .abtn { width:96px; height:96px; border-radius:50%; border:3px solid #913; background:var(--btn);
+          color:#fff; font:bold 22px system-ui; box-shadow:0 4px 0 #701018; touch-action:none; }
+  .abtn:active { transform:translateY(3px); box-shadow:0 1px 0 #701018; }
+  .dpad { display:grid; grid-template-columns:repeat(3,40px); grid-template-rows:repeat(3,40px); gap:4px; }
+  .dpad button { background:#222a40; color:#cde; border:1px solid #3a4566; border-radius:6px; font:bold 14px monospace; touch-action:none; }
+  .dpad button:active { background:#34406a; }
+  .dpad .spacer { visibility:hidden; }
+  .telemetry { font:11px monospace; color:#7a86a8; }
+  .telemetry b { color:#bcd; }
+  /* hide-controls toggle: a tappable pill; turns green when controls are hidden. */
+  .pill.toggle { cursor:pointer; border:1px solid #3a4566; background:#1b2030; color:#bcd; }
+  .pill.toggle:active { background:#34406a; }
+  .pill.toggle[aria-pressed="true"] { background:#1e3a24; color:var(--ok); border-color:#2e6b3a; }
+  /* collapsed state: hide the whole gamepad (stick + d-pad + A), free the screen.
+     display:none keeps the nodes in the DOM so the test's getByTestId still
+     resolves them (hidden, not removed), matching the project's HIDE-HUD idiom. */
+  body.controls-hidden .gamepad { display:none; }
+  /* this controller's assigned color (from the hub): a swatch + label in the header,
+     and a thin accent border around the whole controller so the player sees "their"
+     color at a glance. Starts neutral until the hub reports the snake's color. */
+  .swatch { width:18px; height:18px; border-radius:50%; border:2px solid #0008;
+            background:#555; vertical-align:middle; display:inline-block; }
+  body { border:4px solid transparent; }
+  body.has-color { border-color: var(--my-color, transparent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <span class="pill" id="hub-status" data-testid="hub-status">not connected</span>
+    <span class="pill" data-testid="open-count">links: 0</span>
+    <!-- this controller's color: swatch + name; the button rotates through the 8
+         palette colors (sends the choice up; the hub picks the next FREE one and
+         confirms back, so two players never share a color). -->
+    <button class="pill toggle" id="color-btn" data-testid="color-btn" title="rotate color">
+      <span class="swatch" id="color-swatch" data-testid="color-swatch"></span>
+      <span id="color-name" data-testid="color-name">color: -</span>
+      <span>&#9654;</span>
+    </button>
+    <!-- Hide/show this controller's own gamepad (stick + d-pad + A). Pure local
+         view toggle: it does NOT stop sending input (the snake keeps its last
+         direction); it just frees the screen. The button stays visible to restore. -->
+    <button class="pill toggle" id="hide-controls" data-testid="hide-controls"
+            aria-pressed="false">hide controls</button>
+  </div>
+  <div class="ids">
+    <div>self: <span data-testid="self-id" id="self-id"></span></div>
+    <div>hub:  <span data-testid="hub-id" id="hub-id"></span></div>
+  </div>
+
+  <div class="gamepad">
+    <!-- AXIS: draggable analog stick. Mirrors live vector to data-ax / data-ay / data-dir. -->
+    <div class="stick-area" id="stick" data-testid="axis" data-ax="0" data-ay="0" data-dir="0">
+      <div class="stick-knob" id="knob"></div>
+    </div>
+
+    <div class="right">
+      <!-- Discrete d-pad: a second, gate-friendly way to drive the same axis (no drag math). -->
+      <div class="dpad">
+        <span class="spacer"></span>
+        <button data-testid="dpad-up"    aria-label="up">▲</button>
+        <span class="spacer"></span>
+        <button data-testid="dpad-left"  aria-label="left">◀</button>
+        <button data-testid="dpad-center" aria-label="center">●</button>
+        <button data-testid="dpad-right" aria-label="right">▶</button>
+        <span class="spacer"></span>
+        <button data-testid="dpad-down"  aria-label="down">▼</button>
+        <span class="spacer"></span>
+      </div>
+      <button class="abtn" data-testid="btn-a" aria-label="action A">A</button>
+    </div>
+  </div>
+
+  <div class="telemetry">
+    dir <b data-testid="cur-dir" id="cur-dir">0</b> ·
+    btn <b data-testid="btn-state" id="btn-state">0</b> ·
+    seq <b data-testid="seq" id="seq">0</b> ·
+    sent <b data-testid="sent-count" id="sent-count">0</b>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  // ─────────────────────────────────────────────────────────────────────────
+  // Star Snake CONTROLLER.
+  // Topology: hub-and-spoke. The hub (the Defold game's CONNECT peer) owns the
+  // authoritative simulation and assigns this controller a snake keyed by THIS
+  // peer's connection id. This page is a dumb input device: axis + button only,
+  // no board. It sends the project's existing CONTROL wire format so the hub's
+  // network_manager.lua decodes it unchanged:
+  //     C|<dir>,<dir2>,<buttons>
+  //   dir/dir2 in {0=none,1=UP,2=DOWN,3=LEFT,4=RIGHT}; buttons bitmask (bit0=A).
+  // Input is small, idempotent, last-write-wins, tick-rate-limited (~20Hz).
+  // The hub is the single source of truth; anything it sends back (S|...) we use
+  // ONLY as a "connected + alive" signal, never as an instruction.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  var DIR = { UP:1, DOWN:2, LEFT:3, RIGHT:4 };
+  var SEND_HZ = 20;                 // tick-rate cap (matches the hub broadcast_dt)
+  var SEND_DT = 1000 / SEND_HZ;
+  var DEADZONE = 0.30;              // sub-deadzone magnitude = no direction
+  var BTN_A = 1;                    // bit0 = USE POWERUP / A (config.btn SOT mirror)
+
+  function qs(name, def) {
+    try {
+      var v = new URLSearchParams(window.location.search).get(name);
+      return (v === null || v === "") ? def : v;
+    } catch (e) { return def; }
+  }
+  // Accept the hub id via ?hub=<id> or ?room=<id> (room mirrors the game's QR link).
+  var HUB_ID = qs("hub", qs("room", ""));
+
+  // ── live input state (last-write-wins) ────────────────────────────────────
+  var st = {
+    dir: 0, dir2: 0,               // primary + secondary (diagonal) directions
+    btn: false,                    // current A held state
+    btnEdge: false,                // one-shot edge: a press to deliver next tick
+    seq: 0,                        // monotonically increasing send counter
+    sent: 0,
+    selfId: "",
+    linked: false
+  };
+
+  var peer = null;
+  var conn = null;                 // the single DataConnection to the hub
+
+  // ── DOM mirrors (stable testids the Playwright gate reads/drives) ─────────
+  var els = {
+    hubStatus: document.querySelector('[data-testid="hub-status"]'),
+    openCount: document.querySelector('[data-testid="open-count"]'),
+    selfId:    document.getElementById("self-id"),
+    hubId:     document.getElementById("hub-id"),
+    stick:     document.getElementById("stick"),
+    knob:      document.getElementById("knob"),
+    curDir:    document.getElementById("cur-dir"),
+    btnState:  document.getElementById("btn-state"),
+    seq:       document.getElementById("seq"),
+    sentCount: document.getElementById("sent-count")
+  };
+  els.hubId.textContent = HUB_ID || "(missing ?hub=)";
+
+  function setStatus(text, ok) {
+    els.hubStatus.textContent = text;
+    if (ok) els.hubStatus.classList.add("ok"); else els.hubStatus.classList.remove("ok");
+  }
+
+  function reflect() {
+    els.stick.setAttribute("data-dir", String(st.dir));
+    els.curDir.textContent = String(st.dir);
+    els.btnState.textContent = st.btn ? "1" : "0";
+    els.seq.textContent = String(st.seq);
+    els.sentCount.textContent = String(st.sent);
+    els.openCount.textContent = "links: " + (st.linked ? 1 : 0);
+  }
+
+  // Map an analog vector (ax in [-1,1], ay in [-1,1], y-up) to dir + dir2.
+  // The dominant axis is the primary direction; a strong secondary axis adds the
+  // diagonal. Sub-deadzone magnitude clears direction (idempotent neutral).
+  function vectorToDirs(ax, ay) {
+    var mag = Math.sqrt(ax * ax + ay * ay);
+    if (!isFinite(mag) || mag < DEADZONE) { return { dir: st.dir, dir2: 0, neutral: true }; }
+    var absx = Math.abs(ax), absy = Math.abs(ay);
+    var horiz = ax >= 0 ? DIR.RIGHT : DIR.LEFT;
+    var vert  = ay >= 0 ? DIR.UP   : DIR.DOWN;
+    var primary, secondary = 0;
+    if (absx >= absy) {
+      primary = horiz;
+      if (absy >= DEADZONE) secondary = vert;
+    } else {
+      primary = vert;
+      if (absx >= DEADZONE) secondary = horiz;
+    }
+    return { dir: primary, dir2: secondary, neutral: false };
+  }
+
+  function setAxis(ax, ay) {
+    // clamp to the unit square defensively (own input, but keep it well-formed).
+    ax = Math.max(-1, Math.min(1, ax || 0));
+    ay = Math.max(-1, Math.min(1, ay || 0));
+    els.stick.setAttribute("data-ax", ax.toFixed(3));
+    els.stick.setAttribute("data-ay", ay.toFixed(3));
+    var r = vectorToDirs(ax, ay);
+    st.dir = r.dir | 0;
+    st.dir2 = r.dir2 | 0;
+    // move the knob visually
+    els.knob.style.left = (50 + ax * 30) + "%";
+    els.knob.style.top  = (50 - ay * 30) + "%";
+    reflect();
+  }
+
+  // discrete press from the d-pad: sets a clean cardinal axis (no drag).
+  function pressDir(dir) {
+    var ax = 0, ay = 0;
+    if (dir === DIR.LEFT) ax = -1; else if (dir === DIR.RIGHT) ax = 1;
+    else if (dir === DIR.UP) ay = 1; else if (dir === DIR.DOWN) ay = -1;
+    setAxis(ax, ay);
+  }
+
+  function pressButtonA() {
+    st.btn = true;
+    st.btnEdge = true;      // deliver a one-shot edge on the next tick (debounced)
+    reflect();
+    // release shortly after so the bitmask falls back to 0 (edge, not hold).
+    setTimeout(function () { st.btn = false; reflect(); }, 120);
+  }
+
+  // ── send loop: tick-rate-limited, last-write-wins ─────────────────────────
+  function buildControlMsg() {
+    var buttons = 0;
+    if (st.btnEdge) { buttons |= BTN_A; st.btnEdge = false; }
+    // C|dir,dir2,buttons  — exactly what packet_serializer.decode expects.
+    return "C|" + (st.dir | 0) + "," + (st.dir2 | 0) + "," + (buttons | 0);
+  }
+
+  function tick() {
+    if (conn && conn.open) {
+      try {
+        conn.send(buildControlMsg());
+        st.seq++; st.sent++;
+        if (!st.linked) { st.linked = true; setStatus("connected to hub", true); }
+      } catch (e) { /* drop a single failed send; keep ticking */ }
+    }
+    reflect();
+  }
+  setInterval(tick, SEND_DT);
+
+  // ── my color (from the hub's broadcast state) ─────────────────────────────
+  // The 8 fixed palette colors (must mirror src/net/color.lua M.PALETTE order) so
+  // we can name the controller's color. Names are cosmetic; the swatch uses the
+  // exact r,g,b the hub sent, so it is correct even if a name is approximate.
+  var PALETTE_NAMES = ["red","orange","yellow","green","cyan","blue","purple","pink"];
+  var PALETTE_RGB = [
+    [0.93,0.20,0.20],[0.97,0.60,0.12],[0.96,0.90,0.20],[0.30,0.85,0.30],
+    [0.20,0.80,0.82],[0.28,0.50,0.95],[0.62,0.35,0.92],[0.95,0.45,0.80]
+  ];
+  var _shownColor = "";
+  var colorIndex = -1;   // current palette index this controller is showing (-1 = unset)
+
+  function nearestName(r, g, b) {
+    var best = -1, bestD = 1e9;
+    for (var i = 0; i < PALETTE_RGB.length; i++) {
+      var p = PALETTE_RGB[i];
+      var d = (r-p[0])*(r-p[0]) + (g-p[1])*(g-p[1]) + (b-p[2])*(b-p[2]);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    return PALETTE_NAMES[best] || "color";
+  }
+
+  function setMyColor(r, g, b) {
+    var rr = Math.round(Math.max(0, Math.min(1, r)) * 255);
+    var gg = Math.round(Math.max(0, Math.min(1, g)) * 255);
+    var bb = Math.round(Math.max(0, Math.min(1, b)) * 255);
+    var css = "rgb(" + rr + "," + gg + "," + bb + ")";
+    if (css === _shownColor) return;     // idempotent: only repaint on change
+    _shownColor = css;
+    var sw = document.getElementById("color-swatch");
+    if (sw) sw.style.background = css;
+    var nm = document.getElementById("color-name");
+    if (nm) nm.textContent = "color: " + nearestName(r, g, b);
+    document.documentElement.style.setProperty("--my-color", css);
+    document.body.classList.add("has-color");
+    // test-observable: the exact rgb the hub assigned this controller.
+    document.body.setAttribute("data-my-color", rr + "," + gg + "," + bb);
+  }
+
+  // Deterministic color FROM this controller's peer id. MUST match src/net/color.lua
+  // M.by_id BIT FOR BIT (same djb2 hash, same PALETTE order) so the snake the hub
+  // draws and this swatch are the SAME color WITHOUT any hub->controller delivery
+  // (that direction is unreliable in this star topology). djb2: h=(h*33+byte)%2^32.
+  function paletteIndexFromId(id) {
+    id = String(id || "");
+    var h = 5381;
+    var MOD = 4294967296;   // 2^32
+    for (var i = 0; i < id.length; i++) {
+      h = (h * 33 + id.charCodeAt(i)) % MOD;   // stays < 2^53, exact in JS doubles
+    }
+    return h % PALETTE_RGB.length;             // 0-based index into the 8-palette
+  }
+
+  function applyMyColorFromId() {
+    if (!st.selfId) return;
+    colorIndex = paletteIndexFromId(st.selfId);
+    var c = PALETTE_RGB[colorIndex];
+    setMyColor(c[0], c[1], c[2]);
+  }
+
+  // Rotate to the NEXT palette color on button press. We paint the next index
+  // locally for instant feedback AND send "K|<idx>" UP to the hub (the reliable
+  // direction). The hub picks the next FREE color >= idx (skip taken) and sends back
+  // "KSET|<final>"; onHubData repaints to the authoritative choice. If the hub's
+  // confirm never arrives (down-channel hiccup) the local guess still shows.
+  function rotateColor() {
+    var next = ((colorIndex < 0 ? 0 : colorIndex) + 1) % PALETTE_RGB.length;
+    colorIndex = next;
+    var c = PALETTE_RGB[next];
+    setMyColor(c[0], c[1], c[2]);
+    if (conn && conn.open) { try { conn.send("K|" + next); } catch (e) {} }
+  }
+
+  // ── PeerJS wiring ─────────────────────────────────────────────────────────
+  // Handle a message the hub sent DOWN to us. We treat it ONLY as confirmation data
+  // (the hub owns the sim). Currently: "KSET|<idx>" = the hub's FINAL color index for
+  // our snake (after skip-taken normalization). Anything else is ignored.
+  function onHubData(raw) {
+    var msg = (typeof raw === "string") ? raw : String(raw);
+    if (msg.indexOf("KSET|") === 0) {
+      var idx = parseInt(msg.slice(5), 10);
+      if (isFinite(idx) && idx >= 0 && idx < PALETTE_RGB.length) {
+        colorIndex = idx;
+        var c = PALETTE_RGB[idx];
+        setMyColor(c[0], c[1], c[2]);
+      }
+    }
+  }
+
+  // Wire ANY conn to/from the hub. `isSend=true` marks the controller's OWN outgoing
+  // conn (used to send C|/K| up — the reliable direction). Both incoming and outgoing
+  // conns get a data listener so a hub confirmation arrives whichever channel opens.
+  function wireConn(c, isSend) {
+    if (isSend) conn = c;
+    var markOpen = function () {
+      st.linked = true;
+      setStatus("connected to hub", true);
+      reflect();
+    };
+    if (c.open) markOpen(); else c.on("open", markOpen);
+    c.on("data", function (raw) { if (!st.linked) markOpen(); try { onHubData(raw); } catch (e) {} });
+    c.on("close", function () { if (isSend) { st.linked = false; setStatus("hub closed", false); reflect(); } });
+    c.on("error", function () { if (isSend) { st.linked = false; setStatus("conn error", false); reflect(); } });
+  }
+
+  function connectToHub() {
+    if (!peer || !HUB_ID) return;
+    // serialization "json": always delivers strings on both ends, matching the
+    // hub bridge (avoids the "[object ArrayBuffer]" freeze the project hit with raw).
+    var c = peer.connect(HUB_ID, { reliable: true, serialization: "json" });
+    wireConn(c, true);
+  }
+
+  // The hub (the Defold game) elects the LOWEST-string-id peer among all known
+  // peers as the simulation authority. Hub ids from cloud.peerjs are hex+dashes
+  // (chars in [0-9a-f-]); a controller whose random id sorts BELOW the hub's would
+  // USURP authority, and since a controller runs no simulation the shared world
+  // would freeze (no snake ever assigned). We force every controller's id to sort
+  // ABOVE any hub id by prefixing "zzzz-" (z > f), so the hub ALWAYS stays the
+  // authority. This keeps the star host-authoritative without touching the wasm.
+  function highSortingId() {
+    var rnd = Math.random().toString(36).slice(2, 10);
+    var t = (Date.now ? Date.now() : 0).toString(36);
+    return "zzzz-" + t + "-" + rnd;
+  }
+
+  function startPeer(customId) {
+    var wantId = (customId !== undefined) ? customId : highSortingId();
+    // Pin the public PeerJS host explicitly to 0.peerjs.com (HTTPS). The lib default
+    // can resolve to cloud.peerjs.com, which has gone down (curl 000) while 0.peerjs.com
+    // answered 200; pinning avoids never getting an id when that host is unreachable.
+    peer = new Peer(wantId, { debug: 0, host: "0.peerjs.com", secure: true, port: 443, path: "/" });
+    // If the requested id is unavailable (collision) the server errors with
+    // "unavailable-id": retry once with a fresh high-sorting id so a rare clash
+    // does not break the controller. Other errors are surfaced to the status pill.
+    peer.on("error", function (err) {
+      var type = String(err && err.type || err);
+      if (type === "unavailable-id" && customId === undefined) {
+        try { peer.destroy(); } catch (e) {}
+        startPeer(highSortingId() + "-" + Math.floor(Math.random() * 1e6).toString(36));
+        return;
+      }
+      setStatus("peer error: " + type, false);
+    });
+    peer.on("open", function (id) {
+      st.selfId = id;
+      els.selfId.textContent = id;
+      setStatus("got id, dialing hub", false);
+      // paint our color NOW from our own id (same hash the hub uses), so it shows
+      // immediately with no dependency on receiving anything from the hub.
+      applyMyColorFromId();
+      // dial the hub from the open handler is fine here: this page's ONLY job is
+      // to connect to the fixed hub (no role race like the mesh's join-on-click).
+      connectToHub();
+    });
+    // ACCEPT the hub's DIAL-BACK. hub->controller sends on the controller's INCOMING
+    // conn are unreliable in peerjs@1.5.5 when the hub is the connectee; so the hub
+    // ALSO dials us, giving it an outgoing channel it configured. We accept that
+    // incoming conn and listen on it for confirmations (e.g. our chosen color).
+    peer.on("connection", function (c) { wireConn(c, false); });
+    peer.on("disconnected", function () { try { peer.reconnect(); } catch (e) {} });
+  }
+
+  // Real-time instrumentation: per-direction send timestamps so a test can measure
+  // end-to-end input->hub-render latency. drive(dir) sets the axis to a clean
+  // cardinal AND sends the control IMMEDIATELY (not waiting for the 20Hz tick), and
+  // records t0 = performance.now() for that direction. The test reads driveStamp(dir)
+  // as t0 and times when the hub's snake data-dir reflects `dir` (t1); latency=t1-t0.
+  // This uses a HIGH-RES clock taken in-page (no Playwright RPC jitter in t0).
+  var _driveStamp = {};   // dir -> performance.now() of the most recent drive(dir)
+
+  function sendNow() {
+    if (conn && conn.open) {
+      try { conn.send(buildControlMsg()); st.seq++; st.sent++;
+        if (!st.linked) { st.linked = true; setStatus("connected to hub", true); }
+        return true;
+      } catch (e) {}
+    }
+    return false;
+  }
+
+  // Expose a tiny hook so the Playwright gate can confirm the live link + counts
+  // without scraping prose. Read-only snapshot; the page owns the truth.
+  window.__CTRL = {
+    open_count: function () { return (conn && conn.open) ? 1 : 0; },
+    self_id: function () { return st.selfId; },
+    hub_id: function () { return HUB_ID; },
+    seq: function () { return st.seq; },
+    now: function () { return performance.now(); },   // shared clock for the test
+    // Drive a precise cardinal direction RIGHT NOW and stamp t0 for it. Returns the
+    // t0 (performance.now) so the test correlates this exact input with the hub.
+    drive: function (dir) {
+      dir = dir | 0;
+      pressDir(dir);                 // sets st.dir to the cardinal (clean axis)
+      var t0 = performance.now();
+      _driveStamp[dir] = t0;
+      sendNow();                     // immediate send (do not wait for the tick)
+      return t0;
+    },
+    // Drive + press A together (exercises the action button on the same frame).
+    drive_with_a: function (dir) {
+      dir = dir | 0;
+      pressDir(dir);
+      st.btnEdge = true;             // one-shot A on this send
+      var t0 = performance.now();
+      _driveStamp[dir] = t0;
+      sendNow();
+      return t0;
+    },
+    driveStamp: function (dir) { return _driveStamp[dir | 0] || 0; },
+    sent: function () { return st.sent; },
+    // Test affordance: send a CRAFTED raw payload to the hub (used by the
+    // ownership negative test to prove the hub keys ownership by CONNECTION,
+    // not by anything the payload claims). Returns true if a send was attempted.
+    send_raw: function (s) {
+      if (conn && conn.open) { try { conn.send(String(s)); return true; } catch (e) {} }
+      return false;
+    },
+    // test-observable: is the gamepad currently hidden?
+    controls_hidden: function () { return document.body.classList.contains("controls-hidden"); },
+    // test-observable: this controller's assigned color "r,g,b" (0..255), or "" yet.
+    my_color: function () { return document.body.getAttribute("data-my-color") || ""; }
+  };
+
+  // ── hide-controls toggle: collapse/show this controller's own gamepad ───────
+  // View-only: it does NOT stop input. The send loop keeps running, so the snake
+  // holds its last direction while the controls are hidden (tap again to steer).
+  (function bindHideControls() {
+    var btn = document.getElementById("hide-controls");
+    if (!btn) return;
+    btn.addEventListener("click", function () {
+      var hidden = document.body.classList.toggle("controls-hidden");
+      btn.setAttribute("aria-pressed", hidden ? "true" : "false");
+      btn.textContent = hidden ? "show controls" : "hide controls";
+    });
+  })();
+
+  // ── input bindings ────────────────────────────────────────────────────────
+  // analog stick: pointer drag inside the circle -> axis vector.
+  (function bindStick() {
+    var area = els.stick;
+    var dragging = false;
+    function toVec(ev) {
+      var rect = area.getBoundingClientRect();
+      var cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+      var px = (ev.clientX !== undefined ? ev.clientX : (ev.touches && ev.touches[0].clientX));
+      var py = (ev.clientY !== undefined ? ev.clientY : (ev.touches && ev.touches[0].clientY));
+      var ax = (px - cx) / (rect.width / 2);
+      var ay = -(py - cy) / (rect.height / 2);   // screen y is down; axis y is up
+      setAxis(ax, ay);
+    }
+    area.addEventListener("pointerdown", function (e) { dragging = true; area.setPointerCapture(e.pointerId); toVec(e); });
+    area.addEventListener("pointermove", function (e) { if (dragging) toVec(e); });
+    area.addEventListener("pointerup",   function ()  { dragging = false; /* hold last dir (snake keeps moving) */ });
+    area.addEventListener("pointercancel", function () { dragging = false; });
+  })();
+
+  // d-pad
+  document.querySelector('[data-testid="dpad-up"]').addEventListener("click", function () { pressDir(DIR.UP); });
+  document.querySelector('[data-testid="dpad-down"]').addEventListener("click", function () { pressDir(DIR.DOWN); });
+  document.querySelector('[data-testid="dpad-left"]').addEventListener("click", function () { pressDir(DIR.LEFT); });
+  document.querySelector('[data-testid="dpad-right"]').addEventListener("click", function () { pressDir(DIR.RIGHT); });
+  document.querySelector('[data-testid="dpad-center"]').addEventListener("click", function () { setAxis(0, 0); });
+  document.querySelector('[data-testid="btn-a"]').addEventListener("click", pressButtonA);
+  // color rotate button
+  document.querySelector('[data-testid="color-btn"]').addEventListener("click", rotateColor);
+
+  reflect();
+  if (typeof Peer === "function") startPeer();
+  else setStatus("PeerJS lib failed to load", false);
+})();
+</script>
+</body>
+</html>
