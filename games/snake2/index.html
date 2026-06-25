@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="utf-8">
@@ -458,7 +458,7 @@
     }
   };
 
-  // ── MESHUI: espelho DOM test-observavel + controles DOM (para o gate) ────────
+  // â”€â”€ MESHUI: espelho DOM test-observavel + controles DOM (para o gate) â”€â”€â”€â”€â”€â”€â”€â”€
   // O jogo continua sendo a GBC handheld desenhada no canvas Defold (humanos). O
   // MESHUI e um ESPELHO minimo do estado test-observavel para o Playwright: ele
   // LE texto DOM por getByTestId(...) e CLICA <button>s reais, entao NAO ha tap no
@@ -543,6 +543,8 @@
     _genQrPressed: false, // GEN QR sob demanda (pulso). O Lua chama QR.show_generator.
     _hudHidden: false, // estado do HIDE HUD (held). O Lua poleia para esconder o
                        // chrome in-canvas; o DOM/QR sao escondidos aqui no bridge.
+    _ctrlHidden: false, // estado do HIDE CTRL (held). O Lua poleia (ctrl_hidden) e
+                        // esconde os nodes do gamepad in-canvas (stick + A/B).
     _roomUrl: "",   // URL de entrada (CLIENT_URL?room=<self_id>), espelhada no DOM
     _built: false,
     _selfId: "",
@@ -691,6 +693,13 @@
       // GBC. O proprio botao fica SEMPRE visivel para poder mostrar de novo.
       controls.appendChild(mkbtn("btn_hud", "hud-toggle", "HIDE HUD",
         function () { self.toggle_hud(); }, "esconde/mostra o HUD sobre a tela"));
+      // HIDE CTRL toggle: esconde/mostra os CONTROLES in-canvas (analogico + A/B).
+      // Diferente do HIDE HUD (que so esconde o chrome de debug e MANTEM o controle):
+      // este esconde o proprio gamepad desenhado no canvas. So SETA a flag held
+      // _ctrlHidden; o Lua poleia (poll_controls.ctrl_hidden) e da gui.set_enabled
+      // nos nodes ctl_stick_base/knob + btn_a/btn_b. O botao fica sempre visivel.
+      controls.appendChild(mkbtn("btn_ctrl", "ctrl-toggle", "HIDE CTRL",
+        function () { self.toggle_ctrl(); }, "esconde/mostra os controles (analogico + A/B)"));
 
       // linha de JOIN: input + botao
       var joinRow = document.createElement("div");
@@ -865,6 +874,16 @@
       this._hudHidden = !this._hudHidden;
       this._apply_hud();
     },
+
+    // HIDE CTRL: flip the held flag + relabel the button. The actual hiding of the
+    // in-canvas controls (stick + A/B) is done by the Lua, which polls ctrl_hidden
+    // and toggles gui.set_enabled on those nodes (the canvas is owned by Defold, not
+    // the DOM). We only own the button label here.
+    toggle_ctrl: function () {
+      this._ctrlHidden = !this._ctrlHidden;
+      var btn = document.getElementById("btn_ctrl");
+      if (btn) btn.textContent = this._ctrlHidden ? "SHOW CTRL" : "HIDE CTRL";
+    },
     _apply_hud: function () {
       var hidden = this._hudHidden === true;
       var rows = document.querySelectorAll("#mesh_panel .hud-chrome");
@@ -975,7 +994,8 @@
         a: this._btnA === true,
         b: this._btnB === true,
         gen_qr: this._genQrPressed === true,  // pulso: (re)gera o QR sob demanda
-        hud_hidden: this._hudHidden === true   // HELD: Lua hides in-canvas chrome + QR when true
+        hud_hidden: this._hudHidden === true,  // HELD: Lua hides in-canvas chrome + QR when true
+        ctrl_hidden: this._ctrlHidden === true // HELD: Lua hides the in-canvas controls (stick + A/B)
       };
       this._connectPressed = false;
       this._joinId = "";
@@ -1043,7 +1063,7 @@
     return document.getElementById("canvas");
   }
 
-  // ── Gerador (STATELESS) ───────────────────────────────────────────────────
+  // â”€â”€ Gerador (STATELESS) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // O bridge NAO guarda "quero mostrar o QR?": quem decide isso e o Lua
   // (qr_should_show). Aqui so desenhamos ou removemos o div quando mandado.
 
@@ -1091,7 +1111,7 @@
     }
   }
 
-  // ── Leitor (camera + jsQR) ────────────────────────────────────────────────
+  // â”€â”€ Leitor (camera + jsQR) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   function setResult(r) { _scanResult = r; }
 
@@ -1220,12 +1240,12 @@
 
 	<div id="app-container" class="canvas-app-container">
 		<div id="running-from-file-warning" style="display: none; margin: 3em;">
-			<h1>Running from local file ⚠️</h1>
+			<h1>Running from local file âš ï¸</h1>
 			<p>It seems like you have opened this file by double-clicking on it. In order to test your build in a browser <b>you need to load this file from a web server</b>. You can either upload this file and the rest of the files from a Defold HTML5 bundle to a web hosting service OR host them using a local web server on your home network.</p>
 			<p><a href="https://defold.com/manuals/html5/#testing-html5-build" target="_blank">Learn more about running a local web server in the Defold HTML5 manual</a>.</p>
 		</div>
 		<div id="webgl-not-supported" style="display: none; margin: 3em;">
-			<h1>WebGL not supported ⚠️</h1>
+			<h1>WebGL not supported âš ï¸</h1>
 			<p>WebGL is not supported by your browser - visit <a href="https://get.webgl.org/">https://get.webgl.org/</a> to learn more.</p>
 		</div>
 		<div id="canvas-container" class="canvas-app-canvas-container">
