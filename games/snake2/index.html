@@ -360,6 +360,10 @@
     ctrl.menu_hidden = !!hidden;
     var root = document.getElementById("snakeui_root");
     if (root) { root.style.display = ctrl.menu_hidden ? "none" : ""; }
+    // the QR is drawn by qr_bridge.js into a SEPARATE div (qr_gen_div), a sibling
+    // of snakeui_root, so collapse it too or it stays floating over a "hidden" menu.
+    var qr = document.getElementById("qr_gen_div");
+    if (qr) { qr.style.display = ctrl.menu_hidden ? "none" : ""; }
     var handle = document.getElementById("snakeui_show");
     if (!handle) {
       handle = el("button", { id: "snakeui_show", "data-testid": "btn-show-menu" }, "MENU");
@@ -661,12 +665,12 @@
 
 	<div id="app-container" class="canvas-app-container">
 		<div id="running-from-file-warning" style="display: none; margin: 3em;">
-			<h1>Running from local file âš ï¸</h1>
+			<h1>Running from local file ⚠️</h1>
 			<p>It seems like you have opened this file by double-clicking on it. In order to test your build in a browser <b>you need to load this file from a web server</b>. You can either upload this file and the rest of the files from a Defold HTML5 bundle to a web hosting service OR host them using a local web server on your home network.</p>
 			<p><a href="https://defold.com/manuals/html5/#testing-html5-build" target="_blank">Learn more about running a local web server in the Defold HTML5 manual</a>.</p>
 		</div>
 		<div id="webgl-not-supported" style="display: none; margin: 3em;">
-			<h1>WebGL not supported âš ï¸</h1>
+			<h1>WebGL not supported ⚠️</h1>
 			<p>WebGL is not supported by your browser - visit <a href="https://get.webgl.org/">https://get.webgl.org/</a> to learn more.</p>
 		</div>
 		<div id="canvas-container" class="canvas-app-canvas-container">
