@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>SOLONE controller</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: #11131a; color: #e7e9ee; font: 15px/1.4 system-ui, sans-serif; overflow: hidden; }
+  #top { padding: 8px 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  #hubid { flex: 1 1 180px; min-width: 120px; padding: 8px; border-radius: 6px; border: 1px solid #333; background: #1b1e27; color: #e7e9ee; font: 13px monospace; }
+  button.go { padding: 8px 12px; border-radius: 6px; border: 0; background: #3a6df0; color: #fff; font-weight: 600; }
+  #status { padding: 2px 10px; font: 12px monospace; color: #9fb0d0; min-height: 18px; }
+  #pad { position: relative; display: flex; gap: 10px; padding: 10px; height: calc(100% - 96px); }
+  #stick { position: relative; flex: 1 1 50%; background: #1b1e27; border-radius: 14px; border: 1px solid #2a2f3d; touch-action: none; }
+  #knob { position: absolute; width: 64px; height: 64px; margin: -32px 0 0 -32px; left: 50%; top: 50%; border-radius: 50%; background: #3a6df0; opacity: 0.85; }
+  #right { flex: 1 1 50%; display: flex; flex-direction: column; gap: 10px; }
+  #btnA { flex: 1; border: 0; border-radius: 14px; background: #e0533a; color: #fff; font-size: 22px; font-weight: 700; touch-action: none; }
+  #touchpad { flex: 1; position: relative; background: #1b1e27; border-radius: 14px; border: 1px solid #2a2f3d; touch-action: none; display: flex; align-items: center; justify-content: center; color: #6b7790; font: 13px monospace; }
+  .dot { position: absolute; width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 50%; background: #34c759; pointer-events: none; }
+</style>
+</head>
+<body>
+  <div id="top">
+    <input id="hubid" placeholder="hub id (UUID)" autocapitalize="none" autocomplete="off" spellcheck="false">
+    <button id="connect" class="go">connect</button>
+  </div>
+  <div id="status">idle</div>
+  <div id="pad">
+    <div id="stick"><div id="knob"></div></div>
+    <div id="right">
+      <button id="btnA">PUSH</button>
+      <div id="touchpad">multitouch pad<div id="dots"></div></div>
+    </div>
+  </div>
+
+<!-- PeerJS from CDN (same lib the hub bridge uses). The controller is a plain
+     static page, no Defold, served from the same bundle dir via bundle_resources. -->
+<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+<script>
+"use strict";
+// HARD RULE: no em-dash anywhere in this file (R11 / H1).
+
+var $ = function (id) { return document.getElementById(id); };
+var statusEl = $("status");
+function setStatus(s) { statusEl.textContent = s; }
+
+var peer = null;
+var conn = null;
+var connected = false;
+
+// ---- R5: validate the hub id shape BEFORE peer.connect(). PeerJS broker ids
+// are [0-9a-fA-F-] strings of a sane length. Never eval, never interpolate it
+// into code or markup, only hand it to peer.connect() as data.
+function validHubId(s) {
+  return typeof s === "string" && /^[0-9a-fA-F-]{8,64}$/.test(s);
+}
+
+// ---- send one JSON {kind,...} frame over the DataChannel (serialization json).
+function send(obj) {
+  if (connected && conn && conn.open) {
+    try { conn.send(JSON.stringify(obj)); } catch (e) { /* ignore a transient send error */ }
+  }
+}
+
+function connectTo(rawId) {
+  var id = (rawId || "").trim();
+  if (!validHubId(id)) { setStatus("invalid id"); return; }
+  setStatus("connecting to " + id + " ...");
+  if (!peer) {
+    peer = new Peer(undefined, { debug: 1 });
+    peer.on("error", function (err) { setStatus("peer error: " + (err && err.type || err)); });
+  }
+  function openConn() {
+    // serialization "json" so both ends always exchange a string (L-PEERJS-02).
+    conn = peer.connect(id, { reliable: true, serialization: "json" });
+    conn.on("open", function () { connected = true; setStatus("CONNECTED to " + id); });
+    conn.on("close", function () { connected = false; setStatus("closed"); });
+    conn.on("error", function (err) { setStatus("conn error: " + (err && err.type || err)); });
+  }
+  if (peer.open) { openConn(); } else { peer.on("open", function () { openConn(); }); }
+}
+
+$("connect").addEventListener("click", function () { connectTo($("hubid").value); });
+
+// Prefill the hub id from the URL query (?hub=...), set by the hub QR link.
+(function () {
+  var m = /[?&]hub=([^&]+)/.exec(window.location.search || "");
+  if (m) {
+    var v = decodeURIComponent(m[1]);
+    $("hubid").value = v;
+    if (validHubId(v.trim())) { connectTo(v); } // auto-connect when scanned
+  }
+})();
+
+// ============================ AXIS (analog stick) =========================
+var stick = $("stick"), knob = $("knob");
+var stickActive = false, stickPid = null;
+function stickUpdate(clientX, clientY) {
+  var r = stick.getBoundingClientRect();
+  var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  var dx = clientX - cx, dy = clientY - cy;
+  var maxr = Math.min(r.width, r.height) / 2 - 32;
+  var dist = Math.hypot(dx, dy);
+  if (dist > maxr && dist > 0) { dx = dx / dist * maxr; dy = dy / dist * maxr; }
+  knob.style.left = (50 + (dx / (r.width / 2)) * 50) + "%";
+  knob.style.top = (50 + (dy / (r.height / 2)) * 50) + "%";
+  var ax = maxr > 0 ? dx / maxr : 0;
+  var ay = maxr > 0 ? -dy / maxr : 0; // y up
+  send({ kind: "axis", x: +ax.toFixed(3), y: +ay.toFixed(3) });
+}
+function stickReset() {
+  knob.style.left = "50%"; knob.style.top = "50%";
+  send({ kind: "axis", x: 0, y: 0 });
+}
+stick.addEventListener("touchstart", function (e) {
+  e.preventDefault(); var t = e.changedTouches[0]; stickActive = true; stickPid = t.identifier; stickUpdate(t.clientX, t.clientY);
+}, { passive: false });
+stick.addEventListener("touchmove", function (e) {
+  e.preventDefault();
+  for (var i = 0; i < e.touches.length; i++) { if (e.touches[i].identifier === stickPid) { stickUpdate(e.touches[i].clientX, e.touches[i].clientY); } }
+}, { passive: false });
+function stickEnd(e) {
+  e.preventDefault();
+  for (var i = 0; i < e.changedTouches.length; i++) { if (e.changedTouches[i].identifier === stickPid) { stickActive = false; stickPid = null; stickReset(); } }
+}
+stick.addEventListener("touchend", stickEnd, { passive: false });
+stick.addEventListener("touchcancel", stickEnd, { passive: false });
+// mouse fallback (desktop test of the controller page)
+stick.addEventListener("mousedown", function (e) { stickActive = true; stickUpdate(e.clientX, e.clientY); });
+window.addEventListener("mousemove", function (e) { if (stickActive) { stickUpdate(e.clientX, e.clientY); } });
+window.addEventListener("mouseup", function () { if (stickActive) { stickActive = false; stickReset(); } });
+
+// ================================ BUTTON =================================
+var btnA = $("btnA");
+function btnDown(e) { if (e) { e.preventDefault(); } send({ kind: "btn", id: "A", down: true }); }
+function btnUp(e) { if (e) { e.preventDefault(); } send({ kind: "btn", id: "A", down: false }); }
+btnA.addEventListener("touchstart", btnDown, { passive: false });
+btnA.addEventListener("touchend", btnUp, { passive: false });
+btnA.addEventListener("mousedown", btnDown);
+btnA.addEventListener("mouseup", btnUp);
+
+// ============================== MULTITOUCH ===============================
+// Send the FULL set of active touch points on the touchpad as kind=touch.
+var touchpad = $("touchpad"), dots = $("dots");
+function collectPts(touchList) {
+  var r = touchpad.getBoundingClientRect();
+  var pts = [];
+  for (var i = 0; i < touchList.length; i++) {
+    var t = touchList[i];
+    if (t.clientX < r.left || t.clientX > r.right || t.clientY < r.top || t.clientY > r.bottom) { continue; }
+    pts.push({ id: t.identifier, x: +(t.clientX - r.left).toFixed(1), y: +(t.clientY - r.top).toFixed(1) });
+  }
+  return pts;
+}
+function renderDots(pts) {
+  dots.innerHTML = "";
+  var r = touchpad.getBoundingClientRect();
+  for (var i = 0; i < pts.length; i++) {
+    var d = document.createElement("div"); d.className = "dot";
+    d.style.left = pts[i].x + "px"; d.style.top = pts[i].y + "px";
+    dots.appendChild(d);
+  }
+}
+function touchpadHandler(e) {
+  e.preventDefault();
+  var pts = collectPts(e.touches);
+  renderDots(pts);
+  send({ kind: "touch", pts: pts });
+}
+touchpad.addEventListener("touchstart", touchpadHandler, { passive: false });
+touchpad.addEventListener("touchmove", touchpadHandler, { passive: false });
+touchpad.addEventListener("touchend", touchpadHandler, { passive: false });
+touchpad.addEventListener("touchcancel", touchpadHandler, { passive: false });
+// mouse fallback: a single synthetic touch point so a desktop can exercise touch.
+var mouseTouch = false;
+touchpad.addEventListener("mousedown", function (e) {
+  mouseTouch = true; var r = touchpad.getBoundingClientRect();
+  var pts = [{ id: 0, x: +(e.clientX - r.left).toFixed(1), y: +(e.clientY - r.top).toFixed(1) }];
+  renderDots(pts); send({ kind: "touch", pts: pts });
+});
+window.addEventListener("mousemove", function (e) {
+  if (!mouseTouch) { return; }
+  var r = touchpad.getBoundingClientRect();
+  var pts = [{ id: 0, x: +(e.clientX - r.left).toFixed(1), y: +(e.clientY - r.top).toFixed(1) }];
+  renderDots(pts); send({ kind: "touch", pts: pts });
+});
+window.addEventListener("mouseup", function () {
+  if (!mouseTouch) { return; }
+  mouseTouch = false; renderDots([]); send({ kind: "touch", pts: [] });
+});
+</script>
+</body>
+</html>
