@@ -1,0 +1,82 @@
+<html>
+<center>
+<p>escolha o arquivo .txt que contem os links<br>
+<input type="file" id="fileinput" />
+</p><br>
+exemplo<br>
+<img src="exemplo.png"></img><br>
+<br> resolver problema da pop-up<br>
+<img src="exemplo2.png"></img> ou
+<img src="exemplo3.png"></img><br><br>
+<br> solucao: <br>
+<img src="exemplo4.png"></img><br>
+
+</center>
+<script type="text/javascript">
+/*function getRestoInicio(old, token){
+	return old.indexOf(token)+token.length;
+}
+*/
+function openAll(linksArray){		
+		for(i=0; i<linksArray.length; i++){
+			window.open(linksArray[i]);
+		}
+}
+function readSingleFile(evt) {
+//Retrieve the first (and only!) File from the FileList object
+	var f = evt.target.files[0]; 
+
+	if (f) {
+		var r = new FileReader();
+		r.onload = function(e) { 
+			var textoTotal = e.target.result;
+			/*
+			var tamanho = textoTotal.length;
+			var token='\r\n';
+
+			var parte="", resto=textoTotal.substr(getRestoInicio(textoTotal, token));
+			var linha=[];
+			
+			parte=textoTotal.substr(0,textoTotal.indexOf(token));
+			linha[0]=parte;
+			
+			var k=1;
+			while(true){
+				parte=resto.substr(0,resto.indexOf(token));
+				if(parte==""){
+					break;
+				}
+				linha[k++]=parte;
+				resto=resto.substr(getRestoInicio(resto, token));
+			}		
+			openAll(linha);
+			//falha na hora de pegar o ultimo link
+			*/			
+			var links = textoTotal.split('\n');
+			openAll(links);
+		}
+		r.readAsText(f);
+	} else { 
+	alert("Failed to load file");
+	}
+}
+
+  document.getElementById('fileinput').addEventListener('change', readSingleFile, false);
+</script>
+
+<br><br>usuario do chrome
+<p id="teste"></p>
+<script>
+function getTabs(){
+alert(1);
+	chrome.tabs.getAllInWindow(null, function(tabs){
+    for (var i = 0; i < tabs.length; i++) {
+	alert(i);
+		//.tabs.sendRequest(tabs[i].id, { action: "xxx" });                         
+    }
+});
+}
+</script>
+<button type="button" onclick="getTabs()">save tabs</button>
+
+</html>
